@@ -22,19 +22,36 @@ async function request<T>(path: string, cacheKey: string, ttl = CACHE_TTL_MS): P
     return JSON.parse(cached.payload_json) as T;
   }
 
-  const key = getEnv().THESPORTSDB_API_KEY || "3";
-  const url = `${BASE}/${key}/${path}`;
+  const configuredKey = getEnv().THESPORTSDB_API_KEY || "3";
+  const keys = configuredKey === "3" ? ["3"] : [configuredKey, "3"];
 
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      headers: { Accept: "application/json" },
-      next: { revalidate: 0 },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
-  } catch (error) {
+  let response: Response | null = null;
+  let lastError: unknown = null;
+  for (const key of keys) {
+    const url = `${BASE}/${key}/${path}`;
+    try {
+      response = await fetch(url, {
+        headers: { Accept: "application/json" },
+        next: { revalidate: 0 },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+    } catch (error) {
+      lastError = error;
+      response = null;
+      continue;
+    }
+    if (response.ok) break;
+    lastError = new Error(`TheSportsDB ${response.status} for ${path}`);
+    // Invalid/paid-key mistakes should fall through to the public test key.
+    if (response.status === 400 || response.status === 401 || response.status === 403 || response.status === 404) {
+      continue;
+    }
+    break;
+  }
+
+  if (!response) {
     if (cached) return JSON.parse(cached.payload_json) as T;
-    throw error;
+    throw lastError instanceof Error ? lastError : new Error(`TheSportsDB failed for ${path}`);
   }
 
   if (!response.ok) {
