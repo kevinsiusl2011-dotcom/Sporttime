@@ -1,25 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export function CalendarSubscribe({
-  feedUrl,
-  googleUrl,
-  title,
-  help,
-  copyLabel,
-  copiedLabel,
-  addGoogleLabel,
-}: {
-  feedUrl: string;
-  googleUrl: string;
-  title: string;
-  help: string;
-  copyLabel: string;
-  copiedLabel: string;
-  addGoogleLabel: string;
-}) {
+export function CalendarSubscribe({ feedUrl, t }: { feedUrl: string; t: Dictionary }) {
   const [copied, setCopied] = useState(false);
+  const appleUrl = feedUrl.replace(/^https?:/i, "webcal:");
+  const googleUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(appleUrl)}`;
 
   async function copy() {
     await navigator.clipboard.writeText(feedUrl);
@@ -29,19 +16,23 @@ export function CalendarSubscribe({
 
   return (
     <section className="card space-y-4 p-6">
-      <h2 className="font-[family-name:var(--font-serif)] text-2xl">{title}</h2>
-      <p className="text-[var(--muted)]">{help}</p>
+      <h2 className="font-[family-name:var(--font-serif)] text-2xl">{t.subscribeTitle}</h2>
+      <p className="text-[var(--muted)]">{t.calendarHelp}</p>
       <p className="break-all rounded-2xl border border-[var(--line)] bg-[var(--bg-elevated)] px-4 py-3 text-sm">
         {feedUrl}
       </p>
       <div className="flex flex-wrap gap-3">
         <a href={googleUrl} className="btn-primary rounded-full px-5 py-2.5 text-sm" target="_blank" rel="noreferrer">
-          {addGoogleLabel}
+          {t.addToGoogle}
+        </a>
+        <a href={appleUrl} className="btn-ghost rounded-full px-5 py-2.5 text-sm">
+          {t.addToApple}
         </a>
         <button type="button" className="btn-ghost rounded-full px-5 py-2.5 text-sm" onClick={copy}>
-          {copied ? copiedLabel : copyLabel}
+          {copied ? t.copied : t.copyLink}
         </button>
       </div>
+      <p className="text-sm text-[var(--muted)]">{t.recoveryHelp}</p>
     </section>
   );
 }

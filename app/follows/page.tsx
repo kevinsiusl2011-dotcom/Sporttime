@@ -3,7 +3,7 @@ import { Nav } from "@/components/nav";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
-import { trilingual } from "@/lib/i18n/localize";
+import { BilingualName } from "@/components/bilingual-name";
 import type { FollowKind } from "@/lib/sports/types";
 
 export default async function FollowsPage() {
@@ -23,9 +23,15 @@ export default async function FollowsPage() {
             {follows.map((follow) => (
               <li key={follow.id} className="card flex items-center justify-between px-4 py-4">
                 <div>
-                  <p className="text-xs tracking-[0.16em] text-[var(--gold)]">{trilingual(follow.kind)}</p>
-                  <p className="mt-1 text-lg">{trilingual(follow.label)}</p>
-                  <p className="text-sm text-[var(--muted)]">{trilingual(follow.sport)}</p>
+                  <p className="text-xs tracking-[0.16em] text-[var(--gold)]">
+                    <BilingualName value={follow.kind} locale={locale} />
+                  </p>
+                  <p className="mt-1 text-lg">
+                    <BilingualName value={follow.label} locale={locale} />
+                  </p>
+                  <p className="text-sm text-[var(--muted)]">
+                    <BilingualName value={follow.sport} locale={locale} />
+                  </p>
                 </div>
                 <FollowButton
                   kind={follow.kind as FollowKind}

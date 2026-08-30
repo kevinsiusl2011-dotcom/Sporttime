@@ -1,9 +1,12 @@
 import { eventFingerprint } from "@/lib/sports/normalize";
 import { upcomingForFollow } from "@/lib/sports/thesportsdb";
 import { deleteCalendarEvent, ensureSporttimeCalendar, upsertCalendarEvent } from "@/lib/calendar/google";
-import { dbAll, dbGet, dbRun, type FollowRow } from "@/lib/db";
+import { buildCalendar } from "@/lib/calendar/ics";
+import { dbAll, dbGet, dbRun, type FollowRow, type UserRow } from "@/lib/db";
 import { parseReminders } from "@/lib/env";
 import type { SportEvent } from "@/lib/sports/types";
+
+const FEED_TTL_MS = 45 * 60 * 1000;
 
 export type SyncResult = {
   scanned: number;
@@ -34,6 +37,47 @@ export async function collectUpcoming(userId: string): Promise<SportEvent[]> {
   }
 
   return [...events.values()].sort((a, b) => a.start.localeCompare(b.start));
+}
+
+export async function rebuildUserFeed(userId: string): Promise<SportEvent[]> {
+  const events = await collectUpcoming(userId);
+  const user = await dbGet<UserRow>("SELECT * FROM users WHERE id = ?", [userId]);
+  const ics = buildCalendar(events, user?.reminder_minutes);
+  await dbRun(
+    `UPDATE users SET feed_ics = ?, feed_events_json = ?, feed_built_at = ?, updated_at = datetime('now') WHERE id = ?`,
+    [ics, JSON.stringify(events), Date.now(), userId],
+  );
+  return events;
+}
+
+export async function eventsForPreview(userId: string): Promise<SportEvent[]> {
+  const user = await dbGet<UserRow>("SELECT * FROM users WHERE id = ?", [userId]);
+  const builtAt = Number(user?.feed_built_at ?? 0);
+  if (user?.feed_events_json && Date.now() - builtAt < FEED_TTL_MS) {
+    try {
+      return JSON.parse(user.feed_events_json) as SportEvent[];
+    } catch {
+      // rebuild below
+    }
+  }
+  try {
+    return await rebuildUserFeed(userId);
+  } catch (error) {
+    if (user?.feed_events_json) {
+      try {
+        return JSON.parse(user.feed_events_json) as SportEvent[];
+      } catch {
+        // fall through
+      }
+    }
+    throw error;
+  }
+}
+
+export async function calendarBodyForUser(user: UserRow): Promise<string> {
+  if (user.feed_ics) return user.feed_ics;
+  const events = await rebuildUserFeed(user.id);
+  return buildCalendar(events, user.reminder_minutes);
 }
 
 async function mapPool<T, R>(items: T[], concurrency: number, worker: (item: T) => Promise<R>): Promise<R[]> {
@@ -113,7 +157,7 @@ export async function refreshAllFeeds(): Promise<{ users: number; events: number
   const users = await dbAll<{ user_id: string }>("SELECT DISTINCT user_id FROM follows");
   let events = 0;
   for (const user of users) {
-    const upcoming = await collectUpcoming(user.user_id);
+    const upcoming = await rebuildUserFeed(user.user_id);
     events += upcoming.length;
   }
   return { users: users.length, events };

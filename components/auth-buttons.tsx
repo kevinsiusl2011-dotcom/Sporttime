@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { explainSignInError, reportSignInError, startGoogleSignIn } from "@/lib/firebase/client";
+import type { Locale } from "@/lib/i18n/dictionaries";
 
 export function SignInButton({
   label,
@@ -10,7 +11,7 @@ export function SignInButton({
 }: {
   label: string;
   pendingLabel?: string;
-  locale?: "zh-Hant" | "en";
+  locale?: Locale;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);

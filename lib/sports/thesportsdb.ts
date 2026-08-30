@@ -1,5 +1,6 @@
 import { dbGet, dbRun } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import { athleteSearchTerms, eventMentionsAthlete, isRosterSport } from "@/lib/sports/athlete";
 import { findCatalogLeague, leaguesForSport, searchCatalogLeagues } from "@/lib/sports/catalog";
 import { currentSeason, nearbySeasons } from "@/lib/sports/season";
 import { asRecords, resolveSearchQuery } from "@/lib/sports/search-query";
@@ -397,25 +398,7 @@ export async function upcomingForFollow(follow: {
   }
 
   if (follow.kind === "athlete") {
-    const extra = safeJson(follow.extra_json);
-    const teamId = extra.teamId as string | undefined;
-    if (teamId) {
-      return upcomingForFollow({
-        kind: "team",
-        source_id: teamId,
-        label: String(extra.team ?? follow.label),
-        sport: follow.sport,
-        extra_json: JSON.stringify({ leagueId: extra.leagueId }),
-      });
-    }
-    const data = await request<{ event?: Array<Record<string, string>> }>(
-      `searchevents.php?e=${encodeURIComponent(follow.label)}`,
-      `search-events:${follow.label.toLowerCase()}`,
-      60 * 60 * 1000,
-    );
-    return asRecords(data.event)
-      .map((raw) => normalizeEvent(raw))
-      .filter((event): event is SportEvent => Boolean(event && isUpcoming(event)));
+    return upcomingForAthlete(follow);
   }
 
   if (follow.kind === "sport") {
@@ -425,6 +408,48 @@ export async function upcomingForFollow(follow: {
   }
 
   return [];
+}
+
+async function searchEventsByQuery(query: string): Promise<SportEvent[]> {
+  const data = await requestSafe<{ event?: unknown }>(
+    `searchevents.php?e=${encodeURIComponent(query)}`,
+    `search-events:${query.toLowerCase()}`,
+    { event: [] },
+    60 * 60 * 1000,
+  );
+  return toUpcoming(data.event);
+}
+
+async function upcomingForAthlete(follow: {
+  source_id: string;
+  label: string;
+  sport: string | null;
+  extra_json: string | null;
+}): Promise<SportEvent[]> {
+  const extra = safeJson(follow.extra_json);
+  const teamId = extra.teamId as string | undefined;
+  const terms = athleteSearchTerms(follow.label);
+  const namedBatches = await Promise.all(terms.map((term) => searchEventsByQuery(term)));
+  const named = uniqueBy(
+    namedBatches.flat().filter((event) => eventMentionsAthlete(event, follow.label)),
+    (event) => event.sourceId,
+  );
+
+  if (isRosterSport(follow.sport)) {
+    const club = teamId
+      ? await upcomingForFollow({
+          kind: "team",
+          source_id: teamId,
+          label: String(extra.team ?? follow.label),
+          sport: follow.sport,
+          extra_json: JSON.stringify({ leagueId: extra.leagueId }),
+        })
+      : [];
+    return uniqueBy([...club, ...named], (event) => event.sourceId).sort((a, b) => a.start.localeCompare(b.start));
+  }
+
+  const teamNext = teamId ? await nextTeamEvents(teamId) : [];
+  return uniqueBy([...named, ...teamNext], (event) => event.sourceId).sort((a, b) => a.start.localeCompare(b.start));
 }
 
 function uniqueBy<T>(items: T[], key: (item: T) => string): T[] {

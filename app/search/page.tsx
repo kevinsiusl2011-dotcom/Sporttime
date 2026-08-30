@@ -17,7 +17,7 @@ export default async function SearchPage() {
       <main className="mx-auto max-w-4xl px-5 py-10">
         <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.search}</h1>
         <div className="mt-8">
-          <SearchPanel t={t} followingIds={followingIds} />
+          <SearchPanel t={t} locale={locale} followingIds={followingIds} />
         </div>
       </main>
     </div>

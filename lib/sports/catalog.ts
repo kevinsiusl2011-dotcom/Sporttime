@@ -1,4 +1,4 @@
-import { NAMES, normalizeKey } from "@/lib/i18n/names";
+import { lookupName, normalizeKey } from "@/lib/i18n/names";
 import { CATALOG, FEATURED_GROUPS, type CatalogEntry } from "@/lib/sports/featured";
 import type { CatalogLeague } from "@/lib/sports/types";
 
@@ -41,7 +41,7 @@ export function listCatalogSports(): string[] {
 function catalogBlob(league: CatalogEntry) {
   const parts = [league.name, league.sport, league.country, ...(league.aliases ?? [])];
   const localized = parts.flatMap((part) => {
-    const pair = NAMES[normalizeKey(part)];
+    const pair = lookupName(part);
     return pair ? [pair.hant, pair.hans] : [];
   });
   return normalizeKey([...parts, ...localized].join(" "));

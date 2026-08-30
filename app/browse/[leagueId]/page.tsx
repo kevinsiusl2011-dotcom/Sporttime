@@ -5,7 +5,7 @@ import { Nav } from "@/components/nav";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
-import { trilingual } from "@/lib/i18n/localize";
+import { BilingualName } from "@/components/bilingual-name";
 import { findCatalogLeague } from "@/lib/sports/catalog";
 import { listLeagueTeams, lookupLeague, seasonEvents } from "@/lib/sports/thesportsdb";
 
@@ -28,10 +28,12 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
       <Nav t={t} locale={locale} />
       <main className="mx-auto max-w-6xl px-5 py-10">
         <p className="text-sm text-[var(--gold)]">
-          {[trilingual(league.sport), trilingual(league.country)].filter(Boolean).join(" · ")}
+          <BilingualName values={[league.sport, league.country]} locale={locale} />
         </p>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="font-[family-name:var(--font-serif)] text-4xl">{trilingual(league.name)}</h1>
+          <h1 className="font-[family-name:var(--font-serif)] text-4xl">
+            <BilingualName value={league.name} locale={locale} />
+          </h1>
           <FollowButton
             kind="league"
             sourceId={league.id}
@@ -54,8 +56,12 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
             {teams.map((team) => (
               <article key={team.id} className="card flex items-center justify-between px-4 py-4">
                 <div>
-                  <p>{trilingual(team.name)}</p>
-                  <p className="text-sm text-[var(--muted)]">{trilingual(team.country)}</p>
+                  <p>
+                    <BilingualName value={team.name} locale={locale} />
+                  </p>
+                  <p className="text-sm text-[var(--muted)]">
+                    <BilingualName value={team.country} locale={locale} />
+                  </p>
                 </div>
                 <FollowButton
                   kind="team"

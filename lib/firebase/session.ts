@@ -16,7 +16,7 @@ export async function finishSporttimeSession(payload: GoogleSignInPayload) {
       const data = (await response.json().catch(() => ({}))) as { error?: string };
       throw new Error(data.error ?? `Sign-in failed (${response.status})`);
     }
-    window.location.href = "/browse";
+    window.location.href = "/follows";
   })().catch((err) => {
     finishing = null;
     throw err;

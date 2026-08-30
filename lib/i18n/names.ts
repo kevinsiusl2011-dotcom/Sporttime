@@ -323,6 +323,22 @@ export const NAMES: Record<string, NamePair> = {
 
   messi: { hant: "美斯", hans: "梅西" },
   "lionel messi": { hant: "美斯", hans: "梅西" },
+  "cristiano ronaldo": { hant: "朗拿度", hans: "C罗" },
+  ronaldo: { hant: "朗拿度", hans: "C罗" },
+  "erling haaland": { hant: "夏蘭特", hans: "哈兰德" },
+  haaland: { hant: "夏蘭特", hans: "哈兰德" },
+  "kylian mbappe": { hant: "麥巴比", hans: "姆巴佩" },
+  mbappe: { hant: "麥巴比", hans: "姆巴佩" },
+  "mohamed salah": { hant: "沙拉", hans: "萨拉赫" },
+  "max verstappen": { hant: "韋斯塔潘", hans: "维斯塔潘" },
+  verstappen: { hant: "韋斯塔潘", hans: "维斯塔潘" },
+  "lewis hamilton": { hant: "咸美頓", hans: "汉密尔顿" },
+  "son heung-min": { hant: "孫興慜", hans: "孙兴慜" },
+  "stephen curry": { hant: "居里", hans: "库里" },
+  "lebron james": { hant: "占士", hans: "詹姆斯" },
+  "carlos alcaraz": { hant: "阿爾卡拉斯", hans: "阿尔卡拉斯" },
+  "jannik sinner": { hant: "辛納", hans: "辛纳" },
+  "jonas vingegaard": { hant: "雲高達爾", hans: "温格高" },
   pogacar: { hant: "波加查", hans: "波加查尔" },
   "tadej pogacar": { hant: "波加查", hans: "波加查尔" },
   ohtani: { hant: "大谷翔平", hans: "大谷翔平" },
@@ -336,5 +352,32 @@ export function normalizeKey(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[.]/g, "")
+    .replace(/&/g, "and")
     .replace(/\s+/g, " ");
+}
+
+let nameIndex: Map<string, NamePair> | null = null;
+
+function indexedNames() {
+  if (!nameIndex) {
+    nameIndex = new Map();
+    for (const [key, pair] of Object.entries(NAMES)) {
+      nameIndex.set(normalizeKey(key), pair);
+    }
+  }
+  return nameIndex;
+}
+
+export function lookupName(value?: string | null): NamePair | null {
+  if (!value) return null;
+  const index = indexedNames();
+  const key = normalizeKey(value);
+  const exact = index.get(key);
+  if (exact) return exact;
+  const stripped = key
+    .replace(/^(afc|fc|cf)\s+/, "")
+    .replace(/\s+(u19|u21|u23|fc|cf|afc)$/, "")
+    .trim();
+  if (stripped && stripped !== key) return index.get(stripped) ?? null;
+  return null;
 }

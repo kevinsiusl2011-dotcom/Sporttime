@@ -1,7 +1,9 @@
 import { randomUUID } from "crypto";
+import { mergeUserData } from "@/lib/account/merge";
 import { encryptSecret } from "@/lib/crypto";
 import { dbGet, dbRun, type UserRow } from "@/lib/db";
 import { createSession } from "@/lib/session";
+import { rebuildUserFeed } from "@/lib/sync/engine";
 
 const CALENDAR_SCOPES =
   "https://www.googleapis.com/auth/calendar.app.created https://www.googleapis.com/auth/calendar.events";
@@ -13,6 +15,7 @@ export async function completeGoogleLogin(input: {
   accessToken?: string | null;
   refreshToken?: string | null;
   expiresIn?: number;
+  guestUserId?: string | null;
 }) {
   const existing = await dbGet<UserRow>("SELECT * FROM users WHERE email = ?", [input.email]);
   const userId = existing?.id ?? randomUUID();
@@ -52,10 +55,20 @@ export async function completeGoogleLogin(input: {
     );
   }
 
+  if (input.guestUserId) {
+    await mergeUserData(input.guestUserId, userId);
+  }
+
   await createSession({
     id: userId,
     email: input.email,
     name: input.name,
     image: input.image,
   });
+
+  try {
+    await rebuildUserFeed(userId);
+  } catch (error) {
+    console.error("Failed to rebuild calendar after Google sign-in", error);
+  }
 }

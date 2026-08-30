@@ -45,5 +45,13 @@ export async function PATCH(request: Request) {
      WHERE id = ?`,
     [parsed.data.reminderMinutes ?? null, parsed.data.timezone ?? null, parsed.data.locale ?? null, user.id],
   );
+  if (parsed.data.reminderMinutes) {
+    try {
+      const { rebuildUserFeed } = await import("@/lib/sync/engine");
+      await rebuildUserFeed(user.id);
+    } catch (error) {
+      console.error("Failed to rebuild calendar after settings change", error);
+    }
+  }
   return Response.json({ ok: true });
 }

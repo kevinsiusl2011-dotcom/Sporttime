@@ -1,6 +1,5 @@
-import { buildCalendar } from "@/lib/calendar/ics";
 import { dbGet, type UserRow } from "@/lib/db";
-import { collectUpcoming } from "@/lib/sync/engine";
+import { calendarBodyForUser } from "@/lib/sync/engine";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
   const token = (await params).token.replace(/\.ics$/i, "");
@@ -11,8 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
   const user = await dbGet<UserRow>("SELECT * FROM users WHERE feed_token = ?", [token]);
   if (!user) return new Response("Not found", { status: 404 });
 
-  const events = await collectUpcoming(user.id);
-  const body = buildCalendar(events, user.reminder_minutes);
+  const body = user.feed_ics ?? (await calendarBodyForUser(user));
 
   return new Response(body, {
     headers: {

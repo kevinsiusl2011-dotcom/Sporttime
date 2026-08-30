@@ -14,7 +14,8 @@ export const DEFAULT_TIME_ZONE = "Asia/Hong_Kong";
 export function formatDateTime(iso: string, locale: string, timeZone = DEFAULT_TIME_ZONE): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  const clock = new Intl.DateTimeFormat(locale === "zh-Hant" ? "zh-HK" : "en-GB", {
+  const clockLocale = locale === "zh-Hant" ? "zh-HK" : locale === "zh-Hans" ? "zh-CN" : "en-GB";
+  const clock = new Intl.DateTimeFormat(clockLocale, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -23,7 +24,9 @@ export function formatDateTime(iso: string, locale: string, timeZone = DEFAULT_T
     hourCycle: "h23",
     timeZone,
   }).format(date);
-  return locale === "zh-Hant" ? `${clock}（香港時間）` : `${clock} HKT`;
+  if (locale === "zh-Hant") return `${clock}（香港時間）`;
+  if (locale === "zh-Hans") return `${clock}（香港时间）`;
+  return `${clock} HKT`;
 }
 
 export function sleep(ms: number) {

@@ -1,5 +1,5 @@
 import { parseReminders } from "@/lib/env";
-import { eventDescription, eventSummary, trilingual } from "@/lib/i18n/localize";
+import { displayName, eventDescription, eventSummary } from "@/lib/i18n/localize";
 import type { SportEvent } from "@/lib/sports/types";
 
 function escapeText(value: string) {
@@ -52,7 +52,7 @@ function vevent(event: SportEvent, reminders: number[]) {
     `SUMMARY:${escapeText(summary)}`,
     `DESCRIPTION:${escapeText(description)}`,
   ];
-  if (event.location) lines.push(`LOCATION:${escapeText(trilingual(event.location))}`);
+  if (event.location) lines.push(`LOCATION:${escapeText(displayName(event.location, "zh-Hant"))}`);
   for (const minutes of reminders.slice(0, 5)) {
     lines.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${escapeText(summary)}`, `TRIGGER:-PT${minutes}M`, "END:VALARM");
   }

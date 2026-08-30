@@ -3,14 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { FollowButton } from "@/components/follow-button";
 import type { SearchResults } from "@/lib/sports/types";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
-import { trilingual } from "@/lib/i18n/localize";
+import { BilingualName } from "@/components/bilingual-name";
+import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 
 export function SearchPanel({
   t,
+  locale,
   followingIds,
 }: {
   t: Dictionary;
+  locale: Locale;
   followingIds: string[];
 }) {
   const [query, setQuery] = useState("");
@@ -90,10 +92,12 @@ export function SearchPanel({
               label: item.name,
               sport: item.sport,
               meta: item.country,
+              image: item.badge,
               extra: { country: item.country },
             }))}
             followed={followed}
             t={t}
+            locale={locale}
           />
           <ResultGroup
             title={t.teams}
@@ -103,10 +107,12 @@ export function SearchPanel({
               label: item.name,
               sport: item.sport,
               meta: item.league,
+              image: item.badge,
               extra: { leagueId: item.leagueId, league: item.league },
             }))}
             followed={followed}
             t={t}
+            locale={locale}
           />
           <ResultGroup
             title={t.athletes}
@@ -116,10 +122,12 @@ export function SearchPanel({
               label: item.name,
               sport: item.sport,
               meta: item.team,
+              image: item.thumb,
               extra: { teamId: item.teamId, team: item.team },
             }))}
             followed={followed}
             t={t}
+            locale={locale}
           />
         </div>
       ) : null}
@@ -132,6 +140,7 @@ function ResultGroup({
   items,
   followed,
   t,
+  locale,
 }: {
   title: string;
   items: Array<{
@@ -140,10 +149,12 @@ function ResultGroup({
     label: string;
     sport: string;
     meta?: string;
+    image?: string;
     extra?: Record<string, unknown>;
   }>;
   followed: Set<string>;
   t: Dictionary;
+  locale: Locale;
 }) {
   if (items.length === 0) return null;
   return (
@@ -152,11 +163,19 @@ function ResultGroup({
       <ul className="space-y-3">
         {items.map((item) => (
           <li key={`${item.kind}:${item.id}`} className="card flex items-center justify-between gap-4 px-4 py-4">
-            <div>
-              <p className="text-lg">{trilingual(item.label)}</p>
-              <p className="text-sm text-[var(--muted)]">
-                {[trilingual(item.sport), item.meta ? trilingual(item.meta) : ""].filter(Boolean).join(" · ")}
-              </p>
+            <div className="flex min-w-0 items-center gap-3">
+              {item.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.image} alt="" className="h-10 w-10 shrink-0 rounded-full bg-[var(--bg-elevated)] object-cover" />
+              ) : null}
+              <div className="min-w-0">
+                <p className="text-lg">
+                  <BilingualName value={item.label} locale={locale} />
+                </p>
+                <p className="text-sm text-[var(--muted)]">
+                  <BilingualName values={[item.sport, item.meta]} locale={locale} />
+                </p>
+              </div>
             </div>
             <FollowButton
               kind={item.kind}

@@ -102,11 +102,27 @@ async function migrate() {
   try {
     if (isPostgres) {
       await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token TEXT", []);
+      await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_ics TEXT", []);
+      await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_events_json TEXT", []);
+      await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_built_at BIGINT", []);
     } else {
       await sqliteClient().execute("ALTER TABLE users ADD COLUMN feed_token TEXT");
     }
   } catch {
     // column already exists
+  }
+  if (!isPostgres) {
+    for (const statement of [
+      "ALTER TABLE users ADD COLUMN feed_ics TEXT",
+      "ALTER TABLE users ADD COLUMN feed_events_json TEXT",
+      "ALTER TABLE users ADD COLUMN feed_built_at INTEGER",
+    ]) {
+      try {
+        await sqliteClient().execute(statement);
+      } catch {
+        // column already exists
+      }
+    }
   }
   if (isPostgres) {
     await neon(postgresUrl!).query("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token)", []);
@@ -144,6 +160,9 @@ export type UserRow = {
   timezone: string | null;
   reminder_minutes: string;
   feed_token: string | null;
+  feed_ics?: string | null;
+  feed_events_json?: string | null;
+  feed_built_at?: number | null;
 };
 
 export type FollowRow = {

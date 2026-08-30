@@ -21,7 +21,7 @@ test("builds a calendar with an upcoming fixture", () => {
   assert.match(ics, /BEGIN:VCALENDAR/);
   assert.match(
     ics.replace(/\r\n /g, ""),
-    /SUMMARY:英超：阿仙奴對車路士（簡體：英超：阿森纳对切尔西；English Premier League: Arsenal vs Chelsea）/,
+    /SUMMARY:英超：阿仙奴對車路士/,
   );
   assert.match(ics, /DTSTART:20260901T180000Z/);
   assert.match(ics, /UID:sporttime-123@sporttime/);

@@ -10,6 +10,8 @@ test("maps nicknames and Chinese names to TheSportsDB queries", () => {
   assert.equal(resolveSearchQuery("MESSI").remoteQuery, "Lionel Messi");
   assert.equal(resolveSearchQuery("美斯").remoteQuery, "Lionel Messi");
   assert.equal(resolveSearchQuery("大谷翔平").remoteQuery, "Shohei Ohtani");
+  assert.equal(resolveSearchQuery("朗拿度").remoteQuery, "Cristiano Ronaldo");
+  assert.equal(resolveSearchQuery("韋斯塔潘").remoteQuery, "Max Verstappen");
   assert.equal(resolveSearchQuery("英超").remoteQuery, "premier league");
 });
 

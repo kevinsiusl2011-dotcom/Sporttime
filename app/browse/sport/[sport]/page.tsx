@@ -5,7 +5,7 @@ import { Nav } from "@/components/nav";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
-import { trilingual } from "@/lib/i18n/localize";
+import { BilingualName } from "@/components/bilingual-name";
 import { leaguesForSport, listCatalogSports, sportSlug } from "@/lib/sports/catalog";
 
 export default async function SportBrowsePage({ params }: { params: Promise<{ sport: string }> }) {
@@ -29,7 +29,9 @@ export default async function SportBrowsePage({ params }: { params: Promise<{ sp
           </Link>
         </p>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="font-[family-name:var(--font-serif)] text-4xl">{trilingual(sport)}</h1>
+          <h1 className="font-[family-name:var(--font-serif)] text-4xl">
+            <BilingualName value={sport} locale={locale} />
+          </h1>
           <FollowButton
             kind="sport"
             sourceId={sport}
@@ -45,10 +47,12 @@ export default async function SportBrowsePage({ params }: { params: Promise<{ sp
           {leagues.map((league) => (
             <article key={league.id} className="card flex flex-col justify-between p-5">
               <div>
-                <p className="text-xs tracking-[0.08em] text-[var(--gold)]">{trilingual(league.country)}</p>
+                <p className="text-xs tracking-[0.08em] text-[var(--gold)]">
+                  <BilingualName value={league.country} locale={locale} />
+                </p>
                 <h2 className="mt-2 text-xl">
                   <Link href={`/browse/${league.id}`} className="hover:text-[var(--accent)]">
-                    {trilingual(league.name)}
+                    <BilingualName value={league.name} locale={locale} />
                   </Link>
                 </h2>
               </div>

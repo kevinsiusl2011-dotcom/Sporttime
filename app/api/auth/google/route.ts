@@ -1,4 +1,5 @@
 import { completeGoogleLogin } from "@/lib/auth/account";
+import { getSession } from "@/lib/session";
 
 export async function POST(request: Request) {
   const body = (await request.json()) as {
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
     return Response.json({ error: data.error?.message ?? "Invalid Google session" }, { status: 401 });
   }
 
+  const guest = await getSession();
   await completeGoogleLogin({
     email,
     name: body.name || profile?.displayName || null,
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
     accessToken: body.accessToken,
     refreshToken: body.refreshToken,
     expiresIn: body.expiresIn,
+    guestUserId: guest?.user?.id,
   });
 
   return Response.json({ ok: true });

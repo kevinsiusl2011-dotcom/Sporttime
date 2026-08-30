@@ -19,6 +19,7 @@ export function LocaleSwitch({ locale, label }: { locale: string; label: string 
         onChange={(event) => setLocale(event.target.value)}
       >
         <option value="zh-Hant">繁體中文</option>
+        <option value="zh-Hans">简体中文</option>
         <option value="en">English</option>
       </select>
     </label>

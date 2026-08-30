@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { dictionaries, type Dictionary, type Locale } from "@/lib/i18n/dictionaries";
 
 export function isLocale(value: string | undefined | null): value is Locale {
-  return value === "zh-Hant" || value === "en";
+  return value === "zh-Hant" || value === "zh-Hans" || value === "en";
 }
 
 export async function getLocale(): Promise<Locale> {

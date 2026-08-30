@@ -4,7 +4,7 @@ import { Nav } from "@/components/nav";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
-import { trilingual } from "@/lib/i18n/localize";
+import { BilingualName } from "@/components/bilingual-name";
 import { listCatalogSports, loadFeaturedShelves, sportSlug } from "@/lib/sports/catalog";
 
 export default async function BrowsePage() {
@@ -31,7 +31,7 @@ export default async function BrowsePage() {
                 href={`/browse/sport/${sportSlug(sport)}`}
                 className="rounded-full border border-[var(--line)] bg-[var(--bg-elevated)] px-4 py-2 text-sm hover:border-[var(--accent)] hover:text-[var(--accent)]"
               >
-                {trilingual(sport)}
+                <BilingualName value={sport} locale={locale} />
               </Link>
             ))}
           </div>
@@ -41,18 +41,18 @@ export default async function BrowsePage() {
           {shelves.map((shelf) => (
             <section key={shelf.id}>
               <h2 className="font-[family-name:var(--font-serif)] text-2xl">
-                {t.groups[shelf.id as keyof typeof t.groups] ?? trilingual(shelf.sport)}
+                {t.groups[shelf.id as keyof typeof t.groups] ?? <BilingualName value={shelf.sport} locale={locale} />}
               </h2>
               <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {shelf.leagues.map((league) => (
                   <article key={league.id} className="card flex flex-col justify-between p-5">
                     <div>
                       <p className="text-xs tracking-[0.08em] text-[var(--gold)]">
-                        {[trilingual(league.sport), trilingual(league.country)].filter(Boolean).join(" · ")}
+                        <BilingualName values={[league.sport, league.country]} locale={locale} />
                       </p>
                       <h3 className="mt-2 text-xl">
                         <Link href={`/browse/${league.id}`} className="hover:text-[var(--accent)]">
-                          {trilingual(league.name)}
+                          <BilingualName value={league.name} locale={locale} />
                         </Link>
                       </h3>
                     </div>

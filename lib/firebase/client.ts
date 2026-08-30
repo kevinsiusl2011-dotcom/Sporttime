@@ -12,6 +12,7 @@ import {
   type Auth,
   type UserCredential,
 } from "firebase/auth";
+import type { Locale } from "@/lib/i18n/dictionaries";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -88,7 +89,7 @@ export function firebaseErrorCode(err: unknown): string {
   return "";
 }
 
-export function explainSignInError(err: unknown, locale: "zh-Hant" | "en" = "zh-Hant"): string {
+export function explainSignInError(err: unknown, locale: Locale = "zh-Hant"): string {
   const code = firebaseErrorCode(err);
   const zh: Record<string, string> = {
     "auth/unauthorized-domain": "呢個網址未獲授權。請用 https://sporttime-delta.vercel.app 再開一次。",
@@ -135,7 +136,9 @@ export function explainSignInError(err: unknown, locale: "zh-Hant" | "en" = "zh-
   const suffix = code ? `（${code}）` : "";
   return locale === "en"
     ? `Google sign-in failed. Please try again.${suffix}`
-    : `Google 登入失敗，請再試一次。${suffix}`;
+    : locale === "zh-Hans"
+      ? `Google 登录失败，请再试一次。${suffix}`
+      : `Google 登入失敗，請再試一次。${suffix}`;
 }
 
 const PENDING_KEY = "sporttime_auth_pending";
