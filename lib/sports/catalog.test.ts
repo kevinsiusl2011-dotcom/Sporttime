@@ -13,7 +13,10 @@ test("lists many sports and keeps league ids unique", () => {
   assert.ok(sports.includes("Soccer"));
   assert.ok(sports.includes("Esports"));
   assert.ok(sports.includes("Cycling"));
-  assert.ok(sports.length >= 12);
+  assert.ok(sports.includes("Badminton"));
+  assert.ok(sports.includes("Table Tennis"));
+  assert.ok(sports.includes("Skiing"));
+  assert.ok(sports.length >= 20);
 });
 
 test("finds leagues by sport slug", () => {
@@ -26,6 +29,8 @@ test("search covers aliases even when the API is limited", () => {
   assert.ok(worlds.some((league) => league.id === "4465"));
   const kleague = searchCatalogLeagues("K League");
   assert.equal(kleague[0]?.id, "4689");
+  const bwf = searchCatalogLeagues("BWF");
+  assert.ok(bwf.some((league) => league.id === "5646"));
 });
 
 test("uses the real World Cup and J1 ids", () => {

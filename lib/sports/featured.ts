@@ -108,13 +108,57 @@ export const CATALOG: CatalogEntry[] = [
   { id: "5426", name: "BLAST Premier", sport: "Esports", country: "World" },
 
   { id: "4544", name: "Italian Volleyball League", sport: "Volleyball", country: "Italy" },
+  { id: "4584", name: "Italian Womens Volleyball League", sport: "Volleyball", country: "Italy" },
+  { id: "5083", name: "FIVB Volleyball Mens Nations League", sport: "Volleyball", country: "World", aliases: ["VNL"] },
+  { id: "5084", name: "FIVB Volleyball Womens Nations League", sport: "Volleyball", country: "World" },
+  { id: "5616", name: "CEV Champions League", sport: "Volleyball", country: "Europe" },
+  { id: "5757", name: "Korean V-League", sport: "Volleyball", country: "South Korea" },
+  { id: "5619", name: "Polish PlusLiga", sport: "Volleyball", country: "Poland" },
+
   { id: "4533", name: "German Handball-Bundesliga", sport: "Handball", country: "Germany" },
+  { id: "4534", name: "Spanish Liga ASOBAL", sport: "Handball", country: "Spain" },
+  { id: "4536", name: "French LNH Division 1", sport: "Handball", country: "France" },
+  { id: "4537", name: "Polish Handball Superliga", sport: "Handball", country: "Poland" },
 
   { id: "4554", name: "PDC Darts", sport: "Darts", country: "World" },
   { id: "4555", name: "World Snooker", sport: "Snooker", country: "World" },
   { id: "4558", name: "Mens FIH Pro League", sport: "Field Hockey", country: "World" },
   { id: "5282", name: "Diamond League", sport: "Athletics", country: "World" },
   { id: "5007", name: "World Athletics Championships", sport: "Athletics", country: "World" },
+
+  { id: "5646", name: "BWF World Tour", sport: "Badminton", country: "World", aliases: ["BWF"] },
+  { id: "4996", name: "Olympics Badminton", sport: "Badminton", country: "World" },
+
+  { id: "5641", name: "World Table Tennis", sport: "Table Tennis", country: "World", aliases: ["WTT", "ITTF"] },
+  { id: "5003", name: "Olympics Table Tennis", sport: "Table Tennis", country: "World" },
+
+  { id: "4540", name: "Australian Super Netball League", sport: "Netball", country: "Australia", aliases: ["Super Netball"] },
+  { id: "4539", name: "UK Netball Superleague", sport: "Netball", country: "England" },
+  { id: "4538", name: "New Zealand Netball League", sport: "Netball", country: "New Zealand", aliases: ["ANZ Premiership"] },
+  { id: "5790", name: "Netball World Cup", sport: "Netball", country: "World" },
+
+  { id: "5625", name: "FIS Alpine Ski World Cup", sport: "Skiing", country: "World", aliases: ["Alpine Skiing"] },
+  { id: "5342", name: "Biathlon World Cup", sport: "Skiing", country: "World" },
+  { id: "5722", name: "FIS Cross-Country Ski World Cup", sport: "Skiing", country: "World" },
+  { id: "5724", name: "FIS Ski Jumping World Cup", sport: "Skiing", country: "World" },
+  { id: "5723", name: "FIS Freestyle World Cup", sport: "Skiing", country: "World" },
+
+  { id: "5753", name: "ISU Grand Prix", sport: "Skating", country: "World", aliases: ["Figure Skating"] },
+  { id: "5145", name: "Olympics Figure Skating", sport: "Skating", country: "World" },
+
+  { id: "5597", name: "World Mens Curling Championship", sport: "Wintersports", country: "World" },
+  { id: "5598", name: "World Womens Curling Championship", sport: "Wintersports", country: "World" },
+
+  { id: "5308", name: "World Swimming Championships", sport: "Watersports", country: "World" },
+  { id: "5393", name: "Water Polo World Cup", sport: "Watersports", country: "World" },
+  { id: "5051", name: "Olympics Swimming", sport: "Watersports", country: "World" },
+  { id: "5049", name: "Olympics Sailing", sport: "Watersports", country: "World" },
+
+  { id: "5036", name: "Olympics Triathlon", sport: "Multi Sports", country: "World" },
+  { id: "4994", name: "Olympics Athletics", sport: "Athletics", country: "World" },
+
+  { id: "5564", name: "All-Ireland Senior Football Championship", sport: "Gaelic", country: "Ireland", aliases: ["GAA Football"] },
+  { id: "5565", name: "All-Ireland Senior Hurling Championship", sport: "Gaelic", country: "Ireland", aliases: ["Hurling"] },
 ];
 
 export const FEATURED_GROUPS: FeaturedGroup[] = [
@@ -184,8 +228,38 @@ export const FEATURED_GROUPS: FeaturedGroup[] = [
     leagueIds: ["4514", "4528", "4529", "4530", "5425", "5426"],
   },
   {
+    id: "court",
+    sport: "Volleyball",
+    leagueIds: ["5083", "5084", "5616", "4544", "5757", "4533", "4534", "4536"],
+  },
+  {
+    id: "racket-more",
+    sport: "Badminton",
+    leagueIds: ["5646", "5641", "4996", "5003"],
+  },
+  {
+    id: "netball",
+    sport: "Netball",
+    leagueIds: ["4540", "4539", "4538", "5790"],
+  },
+  {
+    id: "winter",
+    sport: "Skiing",
+    leagueIds: ["5625", "5342", "5724", "5722", "5753", "5597"],
+  },
+  {
+    id: "water",
+    sport: "Watersports",
+    leagueIds: ["5308", "5393", "5051", "5049"],
+  },
+  {
+    id: "gaelic",
+    sport: "Gaelic",
+    leagueIds: ["5564", "5565"],
+  },
+  {
     id: "other",
     sport: "Multi",
-    leagueIds: ["5282", "4554", "4555", "4544", "4533", "4558"],
+    leagueIds: ["5282", "4994", "4554", "4555", "4558", "5036"],
   },
 ];

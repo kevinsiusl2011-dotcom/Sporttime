@@ -17,16 +17,15 @@ export async function collectUpcoming(userId: string): Promise<SportEvent[]> {
   const follows = await dbAll<FollowRow>("SELECT * FROM follows WHERE user_id = ?", [userId]);
   const events = new Map<string, SportEvent>();
 
-  const batches = await Promise.all(
-    follows.map(async (follow) => {
-      try {
-        return await upcomingForFollow(follow);
-      } catch (error) {
-        console.error("Failed to load fixtures for follow", follow.id, error);
-        return [] as SportEvent[];
-      }
-    }),
-  );
+  // Keep free-tier SportsDB under its request budget when many leagues are followed.
+  const batches = await mapPool(follows, 2, async (follow) => {
+    try {
+      return await upcomingForFollow(follow);
+    } catch (error) {
+      console.error("Failed to load fixtures for follow", follow.id, error);
+      return [] as SportEvent[];
+    }
+  });
 
   for (const batch of batches) {
     for (const event of batch) {
@@ -35,6 +34,21 @@ export async function collectUpcoming(userId: string): Promise<SportEvent[]> {
   }
 
   return [...events.values()].sort((a, b) => a.start.localeCompare(b.start));
+}
+
+async function mapPool<T, R>(items: T[], concurrency: number, worker: (item: T) => Promise<R>): Promise<R[]> {
+  if (items.length === 0) return [];
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  async function run() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await worker(items[index]!);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => run()));
+  return results;
 }
 
 export async function syncUserCalendar(userId: string): Promise<SyncResult> {

@@ -1,7 +1,7 @@
 import { dbGet, dbRun } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { findCatalogLeague, leaguesForSport, searchCatalogLeagues } from "@/lib/sports/catalog";
-import { nearbySeasons } from "@/lib/sports/season";
+import { currentSeason, nearbySeasons } from "@/lib/sports/season";
 import { asRecords, resolveSearchQuery } from "@/lib/sports/search-query";
 import { isUpcoming, normalizeEvent } from "@/lib/sports/normalize";
 import type { CatalogLeague, CatalogTeam, SearchResults, SportEvent } from "@/lib/sports/types";
@@ -9,6 +9,9 @@ import type { CatalogLeague, CatalogTeam, SearchResults, SportEvent } from "@/li
 const BASE = "https://www.thesportsdb.com/api/v1/json";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 8_000;
+/** Free tier truncates season dumps; pull several rounds + a short day window instead. */
+const FREE_ROUND_LOOKAHEAD = 6;
+const FREE_DAY_HORIZON = 18;
 
 type CacheRow = { payload_json: string; expires_at: number };
 
@@ -42,8 +45,14 @@ async function request<T>(path: string, cacheKey: string, ttl = CACHE_TTL_MS): P
     }
     if (response.ok) break;
     lastError = new Error(`TheSportsDB ${response.status} for ${path}`);
-    // Invalid/paid-key mistakes should fall through to the public test key.
-    if (response.status === 400 || response.status === 401 || response.status === 403 || response.status === 404) {
+    // Invalid keys / rate limits: try the next candidate key, else fall back to cache.
+    if (
+      response.status === 400 ||
+      response.status === 401 ||
+      response.status === 403 ||
+      response.status === 404 ||
+      response.status === 429
+    ) {
       continue;
     }
     break;
@@ -251,20 +260,101 @@ export async function nextTeamEvents(teamId: string): Promise<SportEvent[]> {
   return toUpcoming(data.events);
 }
 
-export async function seasonEvents(leagueId: string, sport = "Soccer"): Promise<SportEvent[]> {
-  const next = await nextLeagueEvents(leagueId);
-  if (next.length > 0) return next;
+async function roundEvents(leagueId: string, season: string, round: number): Promise<SportEvent[]> {
+  if (!Number.isFinite(round) || round < 1) return [];
+  const data = await requestSafe<{ events?: Array<Record<string, string>> }>(
+    `eventsround.php?id=${encodeURIComponent(leagueId)}&r=${encodeURIComponent(String(round))}&s=${encodeURIComponent(season)}`,
+    `round:${leagueId}:${season}:${round}`,
+    { events: [] },
+    3 * 60 * 60 * 1000,
+  );
+  return toUpcoming(data.events);
+}
 
-  for (const season of nearbySeasons(sport)) {
+function dayStamp(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+async function leagueDayHorizon(leagueId: string, days: number): Promise<SportEvent[]> {
+  const start = new Date();
+  const stamps = Array.from({ length: days }, (_, index) => {
+    const date = new Date(start);
+    date.setUTCDate(date.getUTCDate() + index);
+    return dayStamp(date);
+  });
+  const batches = await mapPool(stamps, 3, async (stamp) => {
     const data = await requestSafe<{ events?: Array<Record<string, string>> }>(
-      `eventsseason.php?id=${encodeURIComponent(leagueId)}&s=${encodeURIComponent(season)}`,
-      `season:${leagueId}:${season}`,
+      `eventsday.php?d=${encodeURIComponent(stamp)}&l=${encodeURIComponent(leagueId)}`,
+      `day-league:${leagueId}:${stamp}`,
+      { events: [] },
+      3 * 60 * 60 * 1000,
+    );
+    return toUpcoming(data.events);
+  });
+  return uniqueBy(batches.flat(), (event) => event.sourceId);
+}
+
+function seedRound(rawEvents: unknown): number | null {
+  for (const item of asRecords(rawEvents)) {
+    const value = Number(item.intRound);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return null;
+}
+
+export async function seasonEvents(leagueId: string, sport = "Soccer"): Promise<SportEvent[]> {
+  const season = currentSeason(sport);
+  const nextData = await requestSafe<{ events?: Array<Record<string, string>> }>(
+    `eventsnextleague.php?id=${encodeURIComponent(leagueId)}`,
+    `next-league:${leagueId}`,
+    { events: [] },
+    3 * 60 * 60 * 1000,
+  );
+  const next = toUpcoming(nextData.events);
+  const roundStart = Math.max(1, (seedRound(nextData.events) ?? 1) - 1);
+  const roundNumbers = Array.from({ length: FREE_ROUND_LOOKAHEAD }, (_, index) => roundStart + index);
+
+  const rounds = await mapPool(roundNumbers, 3, (round) => roundEvents(leagueId, season, round));
+  let merged = uniqueBy([...next, ...rounds.flat()], (event) => event.sourceId);
+
+  // Non-round sports (or sparse rounds) still need a day window on the free tier.
+  if (merged.length < 8) {
+    const days = await leagueDayHorizon(leagueId, FREE_DAY_HORIZON);
+    merged = uniqueBy([...merged, ...days], (event) => event.sourceId);
+  }
+
+  if (merged.length > 0) {
+    return merged.sort((a, b) => a.start.localeCompare(b.start));
+  }
+
+  for (const nearby of nearbySeasons(sport)) {
+    const data = await requestSafe<{ events?: Array<Record<string, string>> }>(
+      `eventsseason.php?id=${encodeURIComponent(leagueId)}&s=${encodeURIComponent(nearby)}`,
+      `season:${leagueId}:${nearby}`,
       { events: [] },
     );
     const upcoming = toUpcoming(data.events);
     if (upcoming.length > 0) return upcoming;
   }
   return [];
+}
+
+async function mapPool<T, R>(items: T[], concurrency: number, worker: (item: T) => Promise<R>): Promise<R[]> {
+  if (items.length === 0) return [];
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  async function run() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await worker(items[index]!);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => run()));
+  return results;
 }
 
 export async function upcomingForFollow(follow: {
