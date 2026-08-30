@@ -17,14 +17,20 @@ export async function collectUpcoming(userId: string): Promise<SportEvent[]> {
   const follows = await dbAll<FollowRow>("SELECT * FROM follows WHERE user_id = ?", [userId]);
   const events = new Map<string, SportEvent>();
 
-  for (const follow of follows) {
-    try {
-      const batch = await upcomingForFollow(follow);
-      for (const event of batch) {
-        events.set(event.sourceId, event);
+  const batches = await Promise.all(
+    follows.map(async (follow) => {
+      try {
+        return await upcomingForFollow(follow);
+      } catch (error) {
+        console.error("Failed to load fixtures for follow", follow.id, error);
+        return [] as SportEvent[];
       }
-    } catch (error) {
-      console.error("Failed to load fixtures for follow", follow.id, error);
+    }),
+  );
+
+  for (const batch of batches) {
+    for (const event of batch) {
+      events.set(event.sourceId, event);
     }
   }
 

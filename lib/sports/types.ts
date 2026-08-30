@@ -59,5 +59,5 @@ export type SearchResults = {
 export type FeaturedGroup = {
   id: string;
   sport: string;
-  leagues: { id: string; fallbackName: string }[];
+  leagueIds: string[];
 };

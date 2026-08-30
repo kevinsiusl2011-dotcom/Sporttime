@@ -34,6 +34,14 @@ function padTime(raw?: string | null): string | null {
   return `${match[1].padStart(2, "0")}:${match[2]}:${match[3] ?? "00"}`;
 }
 
+/** TheSportsDB `strTimestamp` is UTC and often omits the `Z` suffix. */
+export function parseSportsTimestamp(raw: string): Date {
+  if (/[zZ]$/.test(raw) || /[+-]\d{2}:?\d{2}$/.test(raw)) {
+    return new Date(raw);
+  }
+  return new Date(`${raw}Z`);
+}
+
 export function normalizeEvent(raw: RawEvent): SportEvent | null {
   const sourceId = raw.idEvent;
   if (!sourceId) return null;
@@ -46,7 +54,7 @@ export function normalizeEvent(raw: RawEvent): SportEvent | null {
   let start: Date;
 
   if (raw.strTimestamp) {
-    start = new Date(raw.strTimestamp);
+    start = parseSportsTimestamp(raw.strTimestamp);
   } else if (localTime) {
     start = new Date(`${date}T${localTime}Z`);
   } else {
@@ -113,7 +121,9 @@ export function matchesFollow(
   follow: { kind: string; source_id: string; label: string; sport?: string | null },
 ): boolean {
   if (follow.kind === "sport") {
-    return event.sport.toLowerCase() === follow.label.toLowerCase() || event.sport === follow.source_id;
+    const sport = event.sport.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const wanted = (follow.label || follow.source_id).toLowerCase().replace(/[^a-z0-9]+/g, "");
+    return sport === wanted || event.sport === follow.source_id;
   }
   if (follow.kind === "league") {
     return event.leagueId === follow.source_id;

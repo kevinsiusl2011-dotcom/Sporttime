@@ -5,12 +5,14 @@ import { Nav } from "@/components/nav";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
+import { trilingual } from "@/lib/i18n/localize";
+import { findCatalogLeague } from "@/lib/sports/catalog";
 import { listLeagueTeams, lookupLeague, seasonEvents } from "@/lib/sports/thesportsdb";
 
 export default async function LeaguePage({ params }: { params: Promise<{ leagueId: string }> }) {
   const user = await ensureUserRecord();
   const { leagueId } = await params;
-  const league = await lookupLeague(leagueId);
+  const league = (await lookupLeague(leagueId)) ?? findCatalogLeague(leagueId);
   if (!league) notFound();
 
   const { t, locale } = await getDictionary();
@@ -25,9 +27,11 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
     <div>
       <Nav t={t} locale={locale} />
       <main className="mx-auto max-w-6xl px-5 py-10">
-        <p className="text-sm text-[var(--gold)]">{[league.sport, league.country].filter(Boolean).join(" · ")}</p>
+        <p className="text-sm text-[var(--gold)]">
+          {[trilingual(league.sport), trilingual(league.country)].filter(Boolean).join(" · ")}
+        </p>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="font-[family-name:var(--font-serif)] text-4xl">{league.name}</h1>
+          <h1 className="font-[family-name:var(--font-serif)] text-4xl">{trilingual(league.name)}</h1>
           <FollowButton
             kind="league"
             sourceId={league.id}
@@ -41,7 +45,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
 
         <section className="mt-10">
           <h2 className="mb-4 font-[family-name:var(--font-serif)] text-2xl">{t.upcoming}</h2>
-          <EventList events={events.slice(0, 20)} t={t} locale={locale} empty={t.emptyEvents} />
+          <EventList events={events.slice(0, 80)} t={t} locale={locale} empty={t.emptyEvents} />
         </section>
 
         <section className="mt-12">
@@ -50,8 +54,8 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
             {teams.map((team) => (
               <article key={team.id} className="card flex items-center justify-between px-4 py-4">
                 <div>
-                  <p>{team.name}</p>
-                  <p className="text-sm text-[var(--muted)]">{team.country}</p>
+                  <p>{trilingual(team.name)}</p>
+                  <p className="text-sm text-[var(--muted)]">{trilingual(team.country)}</p>
                 </div>
                 <FollowButton
                   kind="team"

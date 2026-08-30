@@ -14,6 +14,11 @@ describe("currentSeason", () => {
   it("uses calendar year for motorsport", () => {
     assert.equal(currentSeason("Motorsport", new Date("2026-08-29")), "2026");
   });
+
+  it("uses calendar year for golf and esports", () => {
+    assert.equal(currentSeason("Golf", new Date("2026-08-29")), "2026");
+    assert.equal(currentSeason("Esports", new Date("2026-08-29")), "2026");
+  });
 });
 
 describe("nearbySeasons", () => {

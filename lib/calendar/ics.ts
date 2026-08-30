@@ -1,4 +1,5 @@
 import { parseReminders } from "@/lib/env";
+import { eventDescription, eventSummary, trilingual } from "@/lib/i18n/localize";
 import type { SportEvent } from "@/lib/sports/types";
 
 function escapeText(value: string) {
@@ -32,7 +33,14 @@ function dayStamp(iso: string) {
 }
 
 function vevent(event: SportEvent, reminders: number[]) {
-  const summary = event.league ? `${event.league}: ${event.title}` : event.title;
+  const summary = eventSummary(event.league, event.title);
+  const description = eventDescription({
+    league: event.league,
+    title: event.title,
+    location: event.location,
+    description: event.description,
+    timeConfirmed: event.timeConfirmed,
+  });
   const lines = [
     "BEGIN:VEVENT",
     `UID:sporttime-${event.sourceId}@sporttime`,
@@ -42,9 +50,9 @@ function vevent(event: SportEvent, reminders: number[]) {
       : `DTSTART:${utcStamp(event.start)}`,
     event.allDay || !event.timeConfirmed ? `DTEND;VALUE=DATE:${dayStamp(event.end)}` : `DTEND:${utcStamp(event.end)}`,
     `SUMMARY:${escapeText(summary)}`,
-    `DESCRIPTION:${escapeText(event.description)}`,
+    `DESCRIPTION:${escapeText(description)}`,
   ];
-  if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`);
+  if (event.location) lines.push(`LOCATION:${escapeText(trilingual(event.location))}`);
   for (const minutes of reminders.slice(0, 5)) {
     lines.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${escapeText(summary)}`, `TRIGGER:-PT${minutes}M`, "END:VALARM");
   }
@@ -60,8 +68,8 @@ export function buildCalendar(events: SportEvent[], reminderMinutes?: string) {
     "PRODID:-//Sporttime//Fixtures//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
-    "X-WR-CALNAME:Sporttime",
-    "X-WR-CALDESC:Upcoming sports fixtures from Sporttime",
+    "X-WR-CALNAME:Sporttime 賽程",
+    "X-WR-CALDESC:Sporttime 賽程 / 赛程 / fixtures",
   ];
   for (const event of events) lines.push(...vevent(event, reminders));
   lines.push("END:VCALENDAR");

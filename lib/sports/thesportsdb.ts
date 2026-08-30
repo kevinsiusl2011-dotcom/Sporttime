@@ -1,11 +1,14 @@
 import { dbGet, dbRun } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import { findCatalogLeague, leaguesForSport, searchCatalogLeagues } from "@/lib/sports/catalog";
 import { nearbySeasons } from "@/lib/sports/season";
+import { asRecords, resolveSearchQuery } from "@/lib/sports/search-query";
 import { isUpcoming, normalizeEvent } from "@/lib/sports/normalize";
 import type { CatalogLeague, CatalogTeam, SearchResults, SportEvent } from "@/lib/sports/types";
 
 const BASE = "https://www.thesportsdb.com/api/v1/json";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 8_000;
 
 type CacheRow = { payload_json: string; expires_at: number };
 
@@ -21,10 +24,18 @@ async function request<T>(path: string, cacheKey: string, ttl = CACHE_TTL_MS): P
 
   const key = getEnv().THESPORTSDB_API_KEY || "3";
   const url = `${BASE}/${key}/${path}`;
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" },
-    next: { revalidate: 0 },
-  });
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 0 },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (cached) return JSON.parse(cached.payload_json) as T;
+    throw error;
+  }
 
   if (!response.ok) {
     if (cached) return JSON.parse(cached.payload_json) as T;
@@ -32,40 +43,64 @@ async function request<T>(path: string, cacheKey: string, ttl = CACHE_TTL_MS): P
   }
 
   const data = (await response.json()) as T;
+  // Free/test keys often return a tiny truncated season slice; don't pin that for hours.
+  const effectiveTtl = shortSeasonPayload(cacheKey, data) ? Math.min(ttl, 15 * 60 * 1000) : ttl;
   await dbRun(
     `INSERT INTO fixture_cache (cache_key, payload_json, fetched_at, expires_at)
      VALUES (?, ?, ?, ?)
      ON CONFLICT(cache_key) DO UPDATE SET payload_json = excluded.payload_json, fetched_at = excluded.fetched_at, expires_at = excluded.expires_at`,
-    [cacheKey, JSON.stringify(data), now, now + ttl],
+    [cacheKey, JSON.stringify(data), now, now + effectiveTtl],
   );
 
   return data;
 }
 
+function shortSeasonPayload(cacheKey: string, data: unknown): boolean {
+  if (!cacheKey.startsWith("season:")) return false;
+  if (!data || typeof data !== "object") return true;
+  const events = (data as { events?: unknown }).events;
+  return !Array.isArray(events) || events.length <= 8;
+}
+
+async function requestSafe<T>(path: string, cacheKey: string, fallback: T, ttl = CACHE_TTL_MS): Promise<T> {
+  try {
+    return await request<T>(path, cacheKey, ttl);
+  } catch {
+    return fallback;
+  }
+}
+
 export async function lookupLeague(id: string): Promise<CatalogLeague | null> {
-  const data = await request<{ leagues?: Array<Record<string, string>> }>(
-    `lookupleague.php?id=${encodeURIComponent(id)}`,
-    `league:${id}`,
-    24 * 60 * 60 * 1000,
-  );
-  const raw = data.leagues?.[0];
-  if (!raw?.idLeague) return null;
-  return {
-    id: raw.idLeague,
-    name: raw.strLeague,
-    sport: raw.strSport,
-    country: raw.strCountry || "",
-    badge: raw.strBadge || raw.strLogo,
-  };
+  try {
+    const data = await request<{ leagues?: Array<Record<string, string>> }>(
+      `lookupleague.php?id=${encodeURIComponent(id)}`,
+      `league:${id}`,
+      24 * 60 * 60 * 1000,
+    );
+    const raw = data.leagues?.[0];
+    if (raw?.idLeague) {
+      return {
+        id: raw.idLeague,
+        name: raw.strLeague,
+        sport: raw.strSport,
+        country: raw.strCountry || "",
+        badge: raw.strBadge || raw.strLogo,
+      };
+    }
+  } catch {
+    // use the local catalogue when the live lookup is rate-limited
+  }
+  return findCatalogLeague(id);
 }
 
 export async function lookupTeam(id: string): Promise<CatalogTeam | null> {
-  const data = await request<{ teams?: Array<Record<string, string>> }>(
+  const data = await requestSafe<{ teams?: Array<Record<string, string>> }>(
     `lookupteam.php?id=${encodeURIComponent(id)}`,
     `team:${id}`,
+    { teams: [] },
     24 * 60 * 60 * 1000,
   );
-  const raw = data.teams?.[0];
+  const raw = asRecords(data.teams)[0];
   if (!raw?.idTeam) return null;
   return {
     id: raw.idTeam,
@@ -82,46 +117,49 @@ export async function searchAll(query: string): Promise<SearchResults> {
   const q = query.trim();
   if (q.length < 2) return { leagues: [], teams: [], athletes: [] };
 
-  const [teamsData, playersData, leagueSoccer, leagueAny] = await Promise.all([
-    request<{ teams?: Array<Record<string, string>> }>(
-      `searchteams.php?t=${encodeURIComponent(q)}`,
-      `search:team:${q.toLowerCase()}`,
+  const { catalogQuery, remoteQuery, skipRemoteLeagues } = resolveSearchQuery(q);
+  const remoteKey = remoteQuery.toLowerCase();
+
+  const [teamsData, playersData, leagueAny] = await Promise.all([
+    requestSafe<{ teams?: unknown }>(
+      `searchteams.php?t=${encodeURIComponent(remoteQuery)}`,
+      `search:team:${remoteKey}`,
+      { teams: [] },
       30 * 60 * 1000,
     ),
-    request<{ player?: Array<Record<string, string>> }>(
-      `searchplayers.php?p=${encodeURIComponent(q)}`,
-      `search:player:${q.toLowerCase()}`,
+    requestSafe<{ player?: unknown }>(
+      `searchplayers.php?p=${encodeURIComponent(remoteQuery)}`,
+      `search:player:${remoteKey}`,
+      { player: [] },
       30 * 60 * 1000,
     ),
-    request<{ countries?: Array<Record<string, string>> }>(
-      `search_all_leagues.php?s=Soccer`,
-      "leagues:soccer",
-      24 * 60 * 60 * 1000,
-    ).catch(() => ({ countries: [] })),
-    request<{ countries?: Array<Record<string, string>> }>(
-      `search_all_leagues.php?l=${encodeURIComponent(q)}`,
-      `search:league:${q.toLowerCase()}`,
-      30 * 60 * 1000,
-    ).catch(() => ({ countries: [] })),
+    skipRemoteLeagues
+      ? Promise.resolve({ countries: [] as unknown })
+      : requestSafe<{ countries?: unknown }>(
+          `search_all_leagues.php?l=${encodeURIComponent(remoteQuery)}`,
+          `search:league:${remoteKey}`,
+          { countries: [] },
+          30 * 60 * 1000,
+        ),
   ]);
 
-  const needle = q.toLowerCase();
-  const leaguePool = [...(leagueAny.countries ?? []), ...(leagueSoccer.countries ?? [])];
+  const needle = remoteQuery.toLowerCase();
+  const remoteLeagues = asRecords(leagueAny.countries)
+    .filter((item) => item.strLeague?.toLowerCase().includes(needle) || item.idLeague === q)
+    .map((item) => ({
+      id: item.idLeague,
+      name: item.strLeague,
+      sport: item.strSport,
+      country: item.strCountry || "",
+      badge: item.strBadge,
+    }));
   const leagues = uniqueBy(
-    leaguePool
-      .filter((item) => item.strLeague?.toLowerCase().includes(needle) || item.idLeague === q)
-      .map((item) => ({
-        id: item.idLeague,
-        name: item.strLeague,
-        sport: item.strSport,
-        country: item.strCountry || "",
-        badge: item.strBadge,
-      })),
+    [...searchCatalogLeagues(catalogQuery), ...searchCatalogLeagues(remoteQuery), ...remoteLeagues],
     (item) => item.id,
-  ).slice(0, 12);
+  ).slice(0, 16);
 
   const teams = uniqueBy(
-    (teamsData.teams ?? []).map((item) => ({
+    asRecords(teamsData.teams).map((item) => ({
       id: item.idTeam,
       name: item.strTeam,
       sport: item.strSport,
@@ -134,7 +172,7 @@ export async function searchAll(query: string): Promise<SearchResults> {
   ).slice(0, 12);
 
   const athletes = uniqueBy(
-    (playersData.player ?? []).map((item) => ({
+    asRecords(playersData.player).map((item) => ({
       id: item.idPlayer,
       name: item.strPlayer,
       sport: item.strSport,
@@ -150,12 +188,13 @@ export async function searchAll(query: string): Promise<SearchResults> {
 }
 
 export async function listLeagueTeams(leagueId: string): Promise<CatalogTeam[]> {
-  const data = await request<{ teams?: Array<Record<string, string>> }>(
+  const data = await requestSafe<{ teams?: Array<Record<string, string>> }>(
     `lookup_all_teams.php?id=${encodeURIComponent(leagueId)}`,
     `league-teams:${leagueId}`,
+    { teams: [] },
     24 * 60 * 60 * 1000,
   );
-  return (data.teams ?? []).map((item) => ({
+  return asRecords(data.teams).map((item) => ({
     id: item.idTeam,
     name: item.strTeam,
     sport: item.strSport,
@@ -166,20 +205,49 @@ export async function listLeagueTeams(leagueId: string): Promise<CatalogTeam[]> 
   }));
 }
 
+function toUpcoming(raw: unknown): SportEvent[] {
+  return uniqueBy(
+    asRecords(raw)
+      .map((item) => normalizeEvent(item))
+      .filter((event): event is SportEvent => Boolean(event && isUpcoming(event))),
+    (event) => event.sourceId,
+  ).sort((a, b) => a.start.localeCompare(b.start));
+}
+
+export async function nextLeagueEvents(leagueId: string): Promise<SportEvent[]> {
+  const data = await requestSafe<{ events?: Array<Record<string, string>> }>(
+    `eventsnextleague.php?id=${encodeURIComponent(leagueId)}`,
+    `next-league:${leagueId}`,
+    { events: [] },
+    3 * 60 * 60 * 1000,
+  );
+  return toUpcoming(data.events);
+}
+
+export async function nextTeamEvents(teamId: string): Promise<SportEvent[]> {
+  const data = await requestSafe<{ events?: Array<Record<string, string>> }>(
+    `eventsnext.php?id=${encodeURIComponent(teamId)}`,
+    `next-team:${teamId}`,
+    { events: [] },
+    3 * 60 * 60 * 1000,
+  );
+  return toUpcoming(data.events);
+}
+
 export async function seasonEvents(leagueId: string, sport = "Soccer"): Promise<SportEvent[]> {
-  const events: SportEvent[] = [];
+  const next = await nextLeagueEvents(leagueId);
+  if (next.length > 0) return next;
+
   for (const season of nearbySeasons(sport)) {
-    const data = await request<{ events?: Array<Record<string, string>> }>(
+    const data = await requestSafe<{ events?: Array<Record<string, string>> }>(
       `eventsseason.php?id=${encodeURIComponent(leagueId)}&s=${encodeURIComponent(season)}`,
       `season:${leagueId}:${season}`,
+      { events: [] },
     );
-    for (const raw of data.events ?? []) {
-      const event = normalizeEvent(raw);
-      if (event) events.push(event);
-    }
-    if (events.length > 0) break;
+    const upcoming = toUpcoming(data.events);
+    if (upcoming.length > 0) return upcoming;
   }
-  return uniqueBy(events, (event) => event.sourceId).filter((event) => isUpcoming(event));
+  return [];
 }
 
 export async function upcomingForFollow(follow: {
@@ -196,11 +264,21 @@ export async function upcomingForFollow(follow: {
   if (follow.kind === "team") {
     const extra = safeJson(follow.extra_json);
     const leagueId = extra.leagueId as string | undefined;
-    if (leagueId) {
-      return (await seasonEvents(leagueId, follow.sport ?? "Soccer")).filter((event) =>
-        [event.home, event.away, event.title].some((value) =>
-          value?.toLowerCase().includes(follow.label.toLowerCase()),
-        ),
+    const [next, fromLeague] = await Promise.all([
+      nextTeamEvents(follow.source_id),
+      leagueId
+        ? seasonEvents(leagueId, follow.sport ?? "Soccer").then((events) =>
+            events.filter((event) =>
+              [event.home, event.away, event.title].some((value) =>
+                value?.toLowerCase().includes(follow.label.toLowerCase()),
+              ),
+            ),
+          )
+        : Promise.resolve([] as SportEvent[]),
+    ]);
+    if (next.length + fromLeague.length > 0) {
+      return uniqueBy([...next, ...fromLeague], (event) => event.sourceId).sort((a, b) =>
+        a.start.localeCompare(b.start),
       );
     }
     const team = await lookupTeam(follow.source_id);
@@ -228,13 +306,15 @@ export async function upcomingForFollow(follow: {
       `search-events:${follow.label.toLowerCase()}`,
       60 * 60 * 1000,
     );
-    return (data.event ?? [])
+    return asRecords(data.event)
       .map((raw) => normalizeEvent(raw))
       .filter((event): event is SportEvent => Boolean(event && isUpcoming(event)));
   }
 
   if (follow.kind === "sport") {
-    return [];
+    const leagues = leaguesForSport(follow.label || follow.source_id).slice(0, 10);
+    const batches = await Promise.all(leagues.map((league) => nextLeagueEvents(league.id)));
+    return uniqueBy(batches.flat(), (event) => event.sourceId).sort((a, b) => a.start.localeCompare(b.start));
   }
 
   return [];

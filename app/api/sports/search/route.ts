@@ -11,6 +11,11 @@ export async function GET(request: Request) {
   const q = (searchParams.get("q") ?? "").trim();
   if (q.length < 2) return Response.json({ leagues: [], teams: [], athletes: [] });
 
-  const results = await searchAll(q);
-  return Response.json(results);
+  try {
+    const results = await searchAll(q);
+    return Response.json(results);
+  } catch (error) {
+    console.error("sports search failed", error);
+    return Response.json({ error: "search_failed", leagues: [], teams: [], athletes: [] }, { status: 503 });
+  }
 }

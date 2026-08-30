@@ -1,15 +1,15 @@
+import { Suspense } from "react";
 import { CalendarSubscribe } from "@/components/calendar-subscribe";
 import { EventList } from "@/components/event-list";
 import { Nav } from "@/components/nav";
 import { ensureUserRecord } from "@/lib/guest";
-import { getDictionary } from "@/lib/i18n";
+import { getDictionary, type Dictionary, type Locale } from "@/lib/i18n";
 import { collectUpcoming } from "@/lib/sync/engine";
 import { calendarFeedUrl, googleSubscribeUrl } from "@/lib/urls";
 
 export default async function PreviewPage() {
   const user = await ensureUserRecord();
   const { t, locale } = await getDictionary();
-  const events = await collectUpcoming(user.id);
   const feedUrl = calendarFeedUrl(user.feed_token!);
 
   return (
@@ -30,9 +30,26 @@ export default async function PreviewPage() {
         </div>
         <section className="mt-10">
           <h2 className="mb-4 font-[family-name:var(--font-serif)] text-2xl">{t.upcoming}</h2>
-          <EventList events={events} t={t} locale={locale} empty={t.emptyEvents} />
+          <Suspense fallback={<p className="text-[var(--muted)]">{t.loadingEvents}</p>}>
+            <UpcomingEvents userId={user.id} t={t} locale={locale} empty={t.emptyEvents} />
+          </Suspense>
         </section>
       </main>
     </div>
   );
+}
+
+async function UpcomingEvents({
+  userId,
+  t,
+  locale,
+  empty,
+}: {
+  userId: string;
+  t: Dictionary;
+  locale: Locale;
+  empty: string;
+}) {
+  const events = await collectUpcoming(userId);
+  return <EventList events={events} t={t} locale={locale} empty={empty} />;
 }

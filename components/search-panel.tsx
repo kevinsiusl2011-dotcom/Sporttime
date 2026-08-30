@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FollowButton } from "@/components/follow-button";
 import type { SearchResults } from "@/lib/sports/types";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { trilingual } from "@/lib/i18n/localize";
 
 export function SearchPanel({
   t,
@@ -15,38 +16,75 @@ export function SearchPanel({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults | null>(null);
   const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState(false);
   const followed = useMemo(() => new Set(followingIds), [followingIds]);
 
-  async function onSearch(value: string) {
-    setQuery(value);
-    if (value.trim().length < 2) {
+  useEffect(() => {
+    const value = query.trim();
+    if (value.length < 2) {
       setResults(null);
+      setPending(false);
+      setFailed(false);
       return;
     }
+
+    const controller = new AbortController();
     setPending(true);
-    try {
-      const response = await fetch(`/api/sports/search?q=${encodeURIComponent(value.trim())}`);
-      setResults((await response.json()) as SearchResults);
-    } finally {
-      setPending(false);
-    }
-  }
+    setFailed(false);
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/sports/search?q=${encodeURIComponent(value)}`, {
+          signal: controller.signal,
+        });
+        const data = (await response.json()) as SearchResults & { error?: string };
+        if (!response.ok || data.error) {
+          setResults(null);
+          setFailed(true);
+          return;
+        }
+        setResults({
+          leagues: data.leagues ?? [],
+          teams: data.teams ?? [],
+          athletes: data.athletes ?? [],
+        });
+      } catch {
+        if (controller.signal.aborted) return;
+        setResults(null);
+        setFailed(true);
+      } finally {
+        if (!controller.signal.aborted) setPending(false);
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query]);
+
+  const leagues = results?.leagues ?? [];
+  const teams = results?.teams ?? [];
+  const athletes = results?.athletes ?? [];
+  const ready = query.trim().length >= 2 && !pending;
+  const empty = ready && !failed && results !== null && leagues.length + teams.length + athletes.length === 0;
 
   return (
     <div className="space-y-8">
       <input
         value={query}
-        onChange={(event) => onSearch(event.target.value)}
+        onChange={(event) => setQuery(event.target.value)}
         placeholder={t.searchPlaceholder}
         className="w-full rounded-2xl border border-[var(--line)] bg-[var(--bg-elevated)] px-5 py-4 text-lg outline-none focus:border-[var(--accent)]"
       />
       {query.trim().length < 2 ? <p className="text-[var(--muted)]">{t.emptySearch}</p> : null}
       {pending ? <p className="text-[var(--muted)]">…</p> : null}
-      {results ? (
+      {ready && failed ? <p className="text-[var(--muted)]">{t.searchFailed}</p> : null}
+      {empty ? <p className="text-[var(--muted)]">{t.searchNoResults}</p> : null}
+      {results && !pending ? (
         <div className="space-y-8">
           <ResultGroup
             title={t.leagues}
-            items={results.leagues.map((item) => ({
+            items={leagues.map((item) => ({
               id: item.id,
               kind: "league" as const,
               label: item.name,
@@ -59,7 +97,7 @@ export function SearchPanel({
           />
           <ResultGroup
             title={t.teams}
-            items={results.teams.map((item) => ({
+            items={teams.map((item) => ({
               id: item.id,
               kind: "team" as const,
               label: item.name,
@@ -72,7 +110,7 @@ export function SearchPanel({
           />
           <ResultGroup
             title={t.athletes}
-            items={results.athletes.map((item) => ({
+            items={athletes.map((item) => ({
               id: item.id,
               kind: "athlete" as const,
               label: item.name,
@@ -115,9 +153,9 @@ function ResultGroup({
         {items.map((item) => (
           <li key={`${item.kind}:${item.id}`} className="card flex items-center justify-between gap-4 px-4 py-4">
             <div>
-              <p className="text-lg">{item.label}</p>
+              <p className="text-lg">{trilingual(item.label)}</p>
               <p className="text-sm text-[var(--muted)]">
-                {[item.sport, item.meta].filter(Boolean).join(" · ")}
+                {[trilingual(item.sport), item.meta ? trilingual(item.meta) : ""].filter(Boolean).join(" · ")}
               </p>
             </div>
             <FollowButton

@@ -13,5 +13,7 @@ export function calendarFeedUrl(token: string) {
 }
 
 export function googleSubscribeUrl(feedUrl: string) {
-  return `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(feedUrl)}`;
+  // Google's cid= flow is unreliable with https:// ICS URLs; webcal:// works more often.
+  const webcalUrl = feedUrl.replace(/^https?:/i, "webcal:");
+  return `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`;
 }

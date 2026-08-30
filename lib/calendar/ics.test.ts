@@ -19,7 +19,7 @@ test("builds a calendar with an upcoming fixture", () => {
   };
   const ics = buildCalendar([event], "60");
   assert.match(ics, /BEGIN:VCALENDAR/);
-  assert.match(ics, /SUMMARY:English Premier League: Arsenal vs Chelsea/);
+  assert.match(ics.replace(/\r\n /g, ""), /SUMMARY:英超：阿仙奴對車路士 \/ 英超：阿森纳对切尔西 \/ English Premier League: Arsenal vs Chelsea/);
   assert.match(ics, /DTSTART:20260901T180000Z/);
   assert.match(ics, /UID:sporttime-123@sporttime/);
   assert.match(ics, /TRIGGER:-PT60M/);

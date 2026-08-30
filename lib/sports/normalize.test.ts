@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { isUpcoming, matchesFollow, normalizeEvent } from "./normalize.ts";
+import { isUpcoming, matchesFollow, normalizeEvent, parseSportsTimestamp } from "./normalize.ts";
 
 describe("normalizeEvent", () => {
   it("builds a timed event from timestamp", () => {
@@ -20,6 +20,17 @@ describe("normalizeEvent", () => {
     assert.equal(event?.timeConfirmed, true);
     assert.equal(event?.allDay, false);
     assert.match(event?.location ?? "", /Emirates/);
+  });
+
+  it("treats bare SportsDB timestamps as UTC", () => {
+    const event = normalizeEvent({
+      idEvent: "1b",
+      strEvent: "Chelsea vs Brighton",
+      dateEvent: "2026-08-30",
+      strTimestamp: "2026-08-30T13:00:00",
+    });
+    assert.equal(event?.start, "2026-08-30T13:00:00.000Z");
+    assert.equal(parseSportsTimestamp("2026-08-30T13:00:00").toISOString(), "2026-08-30T13:00:00.000Z");
   });
 
   it("marks missing times as TBA all-day", () => {

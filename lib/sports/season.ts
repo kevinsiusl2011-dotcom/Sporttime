@@ -7,6 +7,13 @@ const CALENDAR_YEAR_SPORTS = new Set([
   "MMA",
   "Fighting",
   "Boxing",
+  "Esports",
+  "ESports",
+  "Athletics",
+  "Darts",
+  "Snooker",
+  "Australian Football",
+  "Field Hockey",
 ]);
 
 export function currentSeason(sport = "Soccer", now = new Date()): string {

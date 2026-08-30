@@ -18,3 +18,4 @@ export async function getDictionary(): Promise<{ locale: Locale; t: Dictionary }
 }
 
 export { interpolate } from "@/lib/i18n/interpolate";
+export type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
