@@ -70,6 +70,8 @@ const statements = [
     )`,
   `CREATE INDEX IF NOT EXISTS idx_follows_user ON follows(user_id)`,
   `CREATE INDEX IF NOT EXISTS idx_synced_user ON synced_events(user_id)`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token)`,
 ];
 
 for (const statement of statements) {

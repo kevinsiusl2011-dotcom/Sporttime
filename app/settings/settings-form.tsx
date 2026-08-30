@@ -7,13 +7,13 @@ export function SettingsForm({
   saveLabel,
   remindersLabel,
   reminderHelp,
-  disconnectLabel,
+  resetFeedLabel,
 }: {
   reminderMinutes: string;
   saveLabel: string;
   remindersLabel: string;
   reminderHelp: string;
-  disconnectLabel: string;
+  resetFeedLabel: string;
 }) {
   const [value, setValue] = useState(reminderMinutes);
   const [message, setMessage] = useState<string | null>(null);
@@ -27,10 +27,14 @@ export function SettingsForm({
     setMessage(response.ok ? "OK" : "Failed");
   }
 
-  async function disconnect() {
-    if (!confirm(disconnectLabel)) return;
-    await fetch("/api/settings", { method: "DELETE" });
-    window.location.href = "/";
+  async function resetFeed() {
+    if (!confirm(resetFeedLabel)) return;
+    const response = await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rotateFeed: true }),
+    });
+    if (response.ok) window.location.reload();
   }
 
   return (
@@ -48,8 +52,8 @@ export function SettingsForm({
         {saveLabel}
       </button>
       {message ? <p className="text-sm text-[var(--muted)]">{message}</p> : null}
-      <button className="block text-sm text-[var(--danger)]" onClick={disconnect}>
-        {disconnectLabel}
+      <button className="block text-sm text-[var(--danger)]" onClick={resetFeed}>
+        {resetFeedLabel}
       </button>
     </div>
   );

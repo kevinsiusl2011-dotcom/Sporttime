@@ -5,7 +5,7 @@ const COOKIE = "sporttime_session";
 
 export type SessionUser = {
   id: string;
-  email: string;
+  email?: string | null;
   name?: string | null;
   image?: string | null;
 };
@@ -41,11 +41,11 @@ export async function getSession(): Promise<{ user: SessionUser } | null> {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret());
-    if (!payload.id || !payload.email) return null;
+    if (!payload.id) return null;
     return {
       user: {
         id: String(payload.id),
-        email: String(payload.email),
+        email: payload.email ? String(payload.email) : null,
         name: payload.name ? String(payload.name) : null,
         image: payload.image ? String(payload.image) : null,
       },

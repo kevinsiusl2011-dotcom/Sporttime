@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { DM_Sans, Newsreader } from "next/font/google";
-import { AuthRedirect } from "@/components/auth-redirect";
 import { getDictionary } from "@/lib/i18n";
 import "./globals.css";
 
@@ -23,13 +22,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { locale, t } = await getDictionary();
+  const { locale } = await getDictionary();
   return (
     <html lang={locale} className={`${sans.variable} ${serif.variable}`}>
-      <body className="antialiased pb-16 md:pb-0">
-        <AuthRedirect locale={locale} completingLabel={t.completingSignIn} />
-        {children}
-      </body>
+      <body className="antialiased pb-16 md:pb-0">{children}</body>
     </html>
   );
 }

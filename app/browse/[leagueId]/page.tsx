@@ -1,15 +1,14 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { EventList } from "@/components/event-list";
 import { FollowButton } from "@/components/follow-button";
 import { Nav } from "@/components/nav";
-import { auth } from "@/lib/auth";
 import { listFollows } from "@/lib/follows";
+import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
 import { listLeagueTeams, lookupLeague, seasonEvents } from "@/lib/sports/thesportsdb";
 
 export default async function LeaguePage({ params }: { params: Promise<{ leagueId: string }> }) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/");
+  const user = await ensureUserRecord();
   const { leagueId } = await params;
   const league = await lookupLeague(leagueId);
   if (!league) notFound();
@@ -18,7 +17,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
   const [teams, events, follows] = await Promise.all([
     listLeagueTeams(leagueId),
     seasonEvents(leagueId, league.sport),
-    listFollows(session.user.id),
+    listFollows(user.id),
   ]);
   const following = new Set(follows.map((follow) => `${follow.kind}:${follow.source_id}`));
 

@@ -1,16 +1,16 @@
-import { redirect } from "next/navigation";
+import { CalendarSubscribe } from "@/components/calendar-subscribe";
 import { EventList } from "@/components/event-list";
 import { Nav } from "@/components/nav";
-import { SyncPanel } from "@/components/sync-panel";
-import { auth } from "@/lib/auth";
+import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
 import { collectUpcoming } from "@/lib/sync/engine";
+import { calendarFeedUrl, googleSubscribeUrl } from "@/lib/urls";
 
 export default async function PreviewPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/");
+  const user = await ensureUserRecord();
   const { t, locale } = await getDictionary();
-  const events = await collectUpcoming(session.user.id);
+  const events = await collectUpcoming(user.id);
+  const feedUrl = calendarFeedUrl(user.feed_token!);
 
   return (
     <div>
@@ -18,11 +18,14 @@ export default async function PreviewPage() {
       <main className="mx-auto max-w-4xl px-5 py-10">
         <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.preview}</h1>
         <div className="mt-6">
-          <SyncPanel
-            syncLabel={t.sync}
-            syncingLabel={t.syncing}
-            resultTemplate={t.syncResult}
-            errorsLabel={t.errors}
+          <CalendarSubscribe
+            feedUrl={feedUrl}
+            googleUrl={googleSubscribeUrl(feedUrl)}
+            title={t.subscribeTitle}
+            help={t.calendarHelp}
+            copyLabel={t.copyLink}
+            copiedLabel={t.copied}
+            addGoogleLabel={t.addToGoogle}
           />
         </div>
         <section className="mt-10">

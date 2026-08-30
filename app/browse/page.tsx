@@ -1,17 +1,15 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { FollowButton } from "@/components/follow-button";
 import { Nav } from "@/components/nav";
-import { auth } from "@/lib/auth";
 import { listFollows } from "@/lib/follows";
+import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
 import { loadFeaturedShelves } from "@/lib/sports/catalog";
 
 export default async function BrowsePage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/");
+  const user = await ensureUserRecord();
   const { t, locale } = await getDictionary();
-  const [shelves, follows] = await Promise.all([loadFeaturedShelves(), listFollows(session.user.id)]);
+  const [shelves, follows] = await Promise.all([loadFeaturedShelves(), listFollows(user.id)]);
   const following = new Set(follows.map((follow) => `${follow.kind}:${follow.source_id}`));
 
   return (

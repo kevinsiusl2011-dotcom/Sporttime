@@ -42,6 +42,7 @@ const SQLITE_SCHEMA = `
       locale TEXT NOT NULL DEFAULT 'zh-Hant',
       timezone TEXT,
       reminder_minutes TEXT NOT NULL DEFAULT '60,1440',
+      feed_token TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -98,6 +99,20 @@ async function migrate() {
   } else {
     await sqliteClient().executeMultiple(SQLITE_SCHEMA);
   }
+  try {
+    if (isPostgres) {
+      await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token TEXT", []);
+    } else {
+      await sqliteClient().execute("ALTER TABLE users ADD COLUMN feed_token TEXT");
+    }
+  } catch {
+    // column already exists
+  }
+  if (isPostgres) {
+    await neon(postgresUrl!).query("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token)", []);
+  } else {
+    await sqliteClient().execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token)");
+  }
   migrated = true;
 }
 
@@ -128,6 +143,7 @@ export type UserRow = {
   locale: string;
   timezone: string | null;
   reminder_minutes: string;
+  feed_token: string | null;
 };
 
 export type FollowRow = {

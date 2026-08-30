@@ -16,7 +16,7 @@ export default async function SetupPage() {
         <div className="card mt-8 p-6">
           <p className="text-sm uppercase tracking-[0.16em] text-[var(--gold)]">{t.health}</p>
           <ul className="mt-4 space-y-2 text-[var(--muted)]">
-            {env.missing.length === 0 ? <li>Google OAuth is configured.</li> : null}
+            {env.missing.length === 0 ? <li>Ready.</li> : null}
             {env.missing.map((item) => (
               <li key={item} className="text-[var(--danger)]">
                 Missing {item}
@@ -27,17 +27,8 @@ export default async function SetupPage() {
             ))}
           </ul>
         </div>
-        <ol className="mt-8 list-decimal space-y-3 pl-5 text-[var(--muted)]">
-          <li>Copy `.env.example` to `.env.local`.</li>
-          <li>
-            Follow <code className="text-[var(--accent)]">docs/setup-google.md</code> to create a Google Cloud OAuth
-            client.
-          </li>
-          <li>Add a TheSportsDB key (test key `3` is fine for a first run).</li>
-          <li>Restart `npm run dev` and sign in with the Google account you added as a test user.</li>
-        </ol>
-        <Link href="/" className="mt-8 inline-block text-[var(--accent)]">
-          ← {t.brand}
+        <Link href="/browse" className="mt-8 inline-block text-[var(--accent)]">
+          ← {t.browse}
         </Link>
       </main>
     </div>

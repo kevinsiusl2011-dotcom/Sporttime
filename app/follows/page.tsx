@@ -1,16 +1,14 @@
-import { redirect } from "next/navigation";
 import { FollowButton } from "@/components/follow-button";
 import { Nav } from "@/components/nav";
-import { auth } from "@/lib/auth";
 import { listFollows } from "@/lib/follows";
+import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
 import type { FollowKind } from "@/lib/sports/types";
 
 export default async function FollowsPage() {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/");
+  const user = await ensureUserRecord();
   const { t, locale } = await getDictionary();
-  const follows = await listFollows(session.user.id);
+  const follows = await listFollows(user.id);
 
   return (
     <div>

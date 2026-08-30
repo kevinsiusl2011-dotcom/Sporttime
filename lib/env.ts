@@ -37,10 +37,8 @@ export function getEnvStatus(): EnvStatus {
   if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 16) {
     missing.push("AUTH_SECRET");
   }
-  const firebaseReady = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
-  const googleOauthReady = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
-  if (!firebaseReady && !googleOauthReady) {
-    missing.push("NEXT_PUBLIC_FIREBASE_API_KEY");
+  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL && !process.env.TURSO_DATABASE_URL) {
+    warnings.push("No hosted database URL; using a local file when possible.");
   }
   if (!process.env.THESPORTSDB_API_KEY) {
     warnings.push("THESPORTSDB_API_KEY is empty; using public test key 3.");

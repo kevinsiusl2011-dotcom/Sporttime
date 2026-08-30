@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { addFollow, listFollows, removeFollow } from "@/lib/follows";
+import { ensureUserRecord } from "@/lib/guest";
 
 const bodySchema = z.object({
   kind: z.enum(["sport", "league", "team", "athlete"]),
@@ -11,19 +11,17 @@ const bodySchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) return Response.json({ error: "Unauthorized" }, { status: 401 });
-  return Response.json({ follows: await listFollows(session.user.id) });
+  const user = await ensureUserRecord();
+  return Response.json({ follows: await listFollows(user.id) });
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await ensureUserRecord();
   const parsed = bodySchema.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: "Invalid body" }, { status: 400 });
 
   const follow = await addFollow({
-    userId: session.user.id,
+    userId: user.id,
     kind: parsed.data.kind,
     sourceId: parsed.data.sourceId,
     label: parsed.data.label,
@@ -34,10 +32,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await ensureUserRecord();
   const parsed = bodySchema.pick({ kind: true, sourceId: true }).safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: "Invalid body" }, { status: 400 });
-  await removeFollow(session.user.id, parsed.data.kind, parsed.data.sourceId);
+  await removeFollow(user.id, parsed.data.kind, parsed.data.sourceId);
   return Response.json({ ok: true });
 }

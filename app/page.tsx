@@ -1,14 +1,9 @@
 import Link from "next/link";
-import { SignInButton } from "@/components/auth-buttons";
 import { Nav } from "@/components/nav";
-import { auth } from "@/lib/auth";
-import { getEnvStatus } from "@/lib/env";
 import { getDictionary } from "@/lib/i18n";
 
 export default async function HomePage() {
   const { t, locale } = await getDictionary();
-  const session = await auth();
-  const env = getEnvStatus();
 
   return (
     <div>
@@ -21,19 +16,11 @@ export default async function HomePage() {
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-[var(--muted)]">{t.heroBody}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            {env.ready && session?.user ? (
-              <Link href="/browse" className="btn-primary rounded-full px-5 py-3">
-                {t.browse}
-              </Link>
-            ) : env.ready ? (
-              <SignInButton label={t.signIn} pendingLabel={t.signingIn} locale={locale} />
-            ) : (
-              <Link href="/setup" className="btn-primary rounded-full px-5 py-3">
-                {t.landingCta}
-              </Link>
-            )}
-            <Link href="/setup" className="btn-ghost rounded-full px-5 py-3">
-              {t.setupDocs}
+            <Link href="/browse" className="btn-primary rounded-full px-5 py-3">
+              {t.landingCta}
+            </Link>
+            <Link href="/preview" className="btn-ghost rounded-full px-5 py-3">
+              {t.addToGoogle}
             </Link>
           </div>
         </section>

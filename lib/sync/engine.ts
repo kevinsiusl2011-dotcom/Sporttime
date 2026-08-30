@@ -89,11 +89,17 @@ export async function syncUserCalendar(userId: string): Promise<SyncResult> {
   return result;
 }
 
-export async function syncAllUsers(): Promise<{ users: number; results: SyncResult[] }> {
-  const users = await dbAll<{ user_id: string }>("SELECT user_id FROM google_accounts");
-  const results: SyncResult[] = [];
+export async function refreshAllFeeds(): Promise<{ users: number; events: number }> {
+  const users = await dbAll<{ user_id: string }>("SELECT DISTINCT user_id FROM follows");
+  let events = 0;
   for (const user of users) {
-    results.push(await syncUserCalendar(user.user_id));
+    const upcoming = await collectUpcoming(user.user_id);
+    events += upcoming.length;
   }
-  return { users: users.length, results };
+  return { users: users.length, events };
+}
+
+export async function syncAllUsers(): Promise<{ users: number; results: SyncResult[] }> {
+  const refreshed = await refreshAllFeeds();
+  return { users: refreshed.users, results: [] };
 }
