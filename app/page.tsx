@@ -26,7 +26,7 @@ export default async function HomePage() {
                 {t.browse}
               </Link>
             ) : env.ready ? (
-              <SignInButton label={t.signIn} locale={locale} />
+              <SignInButton label={t.signIn} pendingLabel={t.signingIn} locale={locale} />
             ) : (
               <Link href="/setup" className="btn-primary rounded-full px-5 py-3">
                 {t.landingCta}

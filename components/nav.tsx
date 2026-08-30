@@ -26,7 +26,11 @@ export async function Nav({ t, locale }: { t: Dictionary; locale: Locale }) {
         ) : null}
         <div className="flex items-center gap-3">
           <LocaleSwitch locale={locale} label={t.language} />
-          {session?.user ? <SignOutButton label={t.signOut} /> : <SignInButton label={t.signIn} locale={locale} />}
+          {session?.user ? (
+            <SignOutButton label={t.signOut} />
+          ) : (
+            <SignInButton label={t.signIn} pendingLabel={t.signingIn} locale={locale} />
+          )}
         </div>
       </div>
       {session?.user ? <MobileNav t={t} /> : null}

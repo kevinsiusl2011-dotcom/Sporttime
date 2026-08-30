@@ -7,6 +7,8 @@ export const dictionaries = {
     heroBody:
       "開源自架。你用自己把 Google 同運動資料 key。英超、西甲、NBA、F1、單車、板球、欖球……全球目錄可搜，唔只熱門幾項。",
     signIn: "用 Google 登入",
+    signingIn: "正在前往 Google…",
+    completingSignIn: "正在完成登入…",
     signOut: "登出",
     browse: "瀏覽",
     search: "搜尋",
@@ -64,6 +66,8 @@ export const dictionaries = {
     heroBody:
       "Open-source and self-hosted. You bring your own Google and sports API keys. Premier League, La Liga, NBA, F1, cycling, cricket, rugby — a global catalogue, not a short favourites list.",
     signIn: "Continue with Google",
+    signingIn: "Going to Google…",
+    completingSignIn: "Finishing sign-in…",
     signOut: "Sign out",
     browse: "Browse",
     search: "Search",

@@ -6,8 +6,9 @@ import {
   browserPopupRedirectResolver,
   getAuth,
   indexedDBLocalPersistence,
+  getRedirectResult,
   initializeAuth,
-  signInWithPopup,
+  signInWithRedirect,
   type Auth,
   type UserCredential,
 } from "firebase/auth";
@@ -91,7 +92,7 @@ export function explainSignInError(err: unknown, locale: "zh-Hant" | "en" = "zh-
   const code = firebaseErrorCode(err);
   const zh: Record<string, string> = {
     "auth/unauthorized-domain": "呢個網址未獲授權。請用 https://sporttime-delta.vercel.app 再開一次。",
-    "auth/popup-blocked": "瀏覽器擋住咗 Google 登入視窗。請允許彈出視窗，再撳一次。",
+    "auth/popup-blocked": "瀏覽器擋住彈窗。而家會改用整頁跳去 Google，請再撳一次。",
     "auth/popup-closed-by-user": "登入視窗被關閉。請再試一次，並批准日曆權限。",
     "auth/cancelled-popup-request": "登入已取消，請再撳一次。",
     "auth/internal-error": "Google 登入中斷。請關閉擋廣告外掛，用 Chrome 開 https://sporttime-delta.vercel.app 再試。",
@@ -137,21 +138,38 @@ export function explainSignInError(err: unknown, locale: "zh-Hant" | "en" = "zh-
     : `Google 登入失敗，請再試一次。${suffix}`;
 }
 
-export async function signInWithGoogleCalendar(): Promise<GoogleSignInPayload> {
+const PENDING_KEY = "sporttime_auth_pending";
+
+export async function startGoogleSignIn() {
   if (!firebaseConfig.apiKey || !firebaseConfig.authDomain) {
     throw new Error("Firebase is not configured");
   }
+  sessionStorage.setItem(PENDING_KEY, "1");
+  await signInWithRedirect(getFirebaseAuth(), googleProvider(true));
+}
 
-  const client = getFirebaseAuth();
+let redirectAttempt: Promise<GoogleSignInPayload | null> | undefined;
 
+export function completeGoogleRedirect() {
+  if (!redirectAttempt) {
+    redirectAttempt = (async () => {
+      const result = await getRedirectResult(getFirebaseAuth());
+      sessionStorage.removeItem(PENDING_KEY);
+      return result ? payloadFromResult(result) : null;
+    })().catch((err) => {
+      sessionStorage.removeItem(PENDING_KEY);
+      redirectAttempt = undefined;
+      throw err;
+    });
+  }
+  return redirectAttempt;
+}
+
+export function hasPendingGoogleRedirect() {
   try {
-    return await payloadFromResult(await signInWithPopup(client, googleProvider(true), browserPopupRedirectResolver));
-  } catch (err) {
-    const code = firebaseErrorCode(err);
-    if (code === "auth/internal-error" || code === "auth/invalid-credential" || code === "auth/user-cancelled") {
-      return await payloadFromResult(await signInWithPopup(client, googleProvider(false), browserPopupRedirectResolver));
-    }
-    throw err;
+    return sessionStorage.getItem(PENDING_KEY) === "1";
+  } catch {
+    return false;
   }
 }
 

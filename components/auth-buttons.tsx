@@ -1,36 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import {
-  explainSignInError,
-  reportSignInError,
-  signInWithGoogleCalendar,
-  type GoogleSignInPayload,
-} from "@/lib/firebase/client";
+import { explainSignInError, reportSignInError, startGoogleSignIn } from "@/lib/firebase/client";
 
-let finishing: Promise<void> | null = null;
-
-async function finishSession(payload: GoogleSignInPayload) {
-  if (finishing) return finishing;
-  finishing = (async () => {
-    const response = await fetch("/api/auth/google", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
-      throw new Error(data.error ?? `Sign-in failed (${response.status})`);
-    }
-    window.location.href = "/browse";
-  })().catch((err) => {
-    finishing = null;
-    throw err;
-  });
-  return finishing;
-}
-
-export function SignInButton({ label, locale = "zh-Hant" }: { label: string; locale?: "zh-Hant" | "en" }) {
+export function SignInButton({
+  label,
+  pendingLabel,
+  locale = "zh-Hant",
+}: {
+  label: string;
+  pendingLabel?: string;
+  locale?: "zh-Hant" | "en";
+}) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -38,12 +19,10 @@ export function SignInButton({ label, locale = "zh-Hant" }: { label: string; loc
     setPending(true);
     setError(null);
     try {
-      const payload = await signInWithGoogleCalendar();
-      await finishSession(payload);
+      await startGoogleSignIn();
     } catch (err) {
       reportSignInError(err);
       setError(explainSignInError(err, locale));
-    } finally {
       setPending(false);
     }
   }
@@ -51,7 +30,7 @@ export function SignInButton({ label, locale = "zh-Hant" }: { label: string; loc
   return (
     <div>
       <button className="btn-primary rounded-full px-5 py-2.5 text-sm" onClick={onClick} disabled={pending}>
-        {pending ? "…" : label}
+        {pending ? pendingLabel ?? "…" : label}
       </button>
       {error ? <p className="mt-2 max-w-sm text-sm text-[var(--danger)]">{error}</p> : null}
     </div>
