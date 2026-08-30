@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  completeRedirectSignIn,
   explainSignInError,
+  reportSignInError,
   signInWithGoogleCalendar,
   type GoogleSignInPayload,
 } from "@/lib/firebase/client";
@@ -19,8 +19,8 @@ async function finishSession(payload: GoogleSignInPayload) {
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
-      const data = (await response.json()) as { error?: string };
-      throw new Error(data.error ?? "Sign-in failed");
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error ?? `Sign-in failed (${response.status})`);
     }
     window.location.href = "/browse";
   })().catch((err) => {
@@ -34,25 +34,6 @@ export function SignInButton({ label, locale = "zh-Hant" }: { label: string; loc
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const payload = await completeRedirectSignIn();
-        if (!payload || cancelled) return;
-        setPending(true);
-        await finishSession(payload);
-      } catch (err) {
-        if (!cancelled) setError(explainSignInError(err, locale));
-      } finally {
-        if (!cancelled) setPending(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [locale]);
-
   async function onClick() {
     setPending(true);
     setError(null);
@@ -60,6 +41,7 @@ export function SignInButton({ label, locale = "zh-Hant" }: { label: string; loc
       const payload = await signInWithGoogleCalendar();
       await finishSession(payload);
     } catch (err) {
+      reportSignInError(err);
       setError(explainSignInError(err, locale));
     } finally {
       setPending(false);
