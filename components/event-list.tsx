@@ -1,4 +1,4 @@
-import { eventHeadline, trilingual } from "@/lib/i18n/localize";
+import { eventHeadline, formatLocalized, trilingual } from "@/lib/i18n/localize";
 import { formatDateTime } from "@/lib/utils";
 import type { SportEvent } from "@/lib/sports/types";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
@@ -32,7 +32,7 @@ export function EventList({
             </p>
           </div>
           <div className="text-sm text-[var(--muted)] md:text-right">
-            {event.timeConfirmed ? formatDateTime(event.start, locale) : t.timeTbd}
+            {event.timeConfirmed ? formatDateTime(event.start, locale, "Asia/Hong_Kong") : t.timeTbd}
           </div>
         </li>
       ))}
@@ -41,14 +41,5 @@ export function EventList({
 }
 
 function EventTitle({ league, title }: { league: string; title: string }) {
-  const headline = eventHeadline(league, title);
-  return (
-    <div className="mt-1">
-      <h3 className="text-lg">{headline.hant}</h3>
-      {headline.hans !== headline.hant ? <p className="text-sm text-[var(--muted)]">{headline.hans}</p> : null}
-      {headline.en !== headline.hant && headline.en !== headline.hans ? (
-        <p className="text-sm text-[var(--muted)]">{headline.en}</p>
-      ) : null}
-    </div>
-  );
+  return <h3 className="mt-1 text-lg leading-snug">{formatLocalized(eventHeadline(league, title))}</h3>;
 }

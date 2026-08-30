@@ -46,13 +46,17 @@ export function localizeText(en: string): LocalizedText {
   };
 }
 
+export function formatLocalized(text: LocalizedText): string {
+  if (!text.hant && !text.en) return "";
+  if (text.hant === text.hans && text.hant === text.en) return text.en;
+  if (text.hant === text.hans || text.hans === text.en) return `${text.hant}（${text.en}）`;
+  if (text.hant === text.en) return `${text.hans}（${text.en}）`;
+  return `${text.hant}（簡體：${text.hans}；${text.en}）`;
+}
+
 export function trilingual(en?: string | null): string {
   if (!en) return "";
-  const text = localizeText(en);
-  if (text.hant === text.hans && text.hant === text.en) return text.en;
-  if (text.hant === text.hans) return `${text.hant} / ${text.en}`;
-  if (text.hant === text.en) return `${text.hans} / ${text.en}`;
-  return `${text.hant} / ${text.hans} / ${text.en}`;
+  return formatLocalized(localizeText(en));
 }
 
 export function eventHeadline(league: string, title: string): LocalizedText {
@@ -67,11 +71,7 @@ export function eventHeadline(league: string, title: string): LocalizedText {
 }
 
 export function eventSummary(league: string, title: string): string {
-  const headline = eventHeadline(league, title);
-  const parts = [headline.hant];
-  if (headline.hans !== headline.hant) parts.push(headline.hans);
-  if (headline.en !== headline.hant && headline.en !== headline.hans) parts.push(headline.en);
-  return parts.join(" / ");
+  return formatLocalized(eventHeadline(league, title));
 }
 
 export function eventDescription(input: {
@@ -83,18 +83,18 @@ export function eventDescription(input: {
 }): string {
   const headline = eventHeadline(input.league, input.title);
   const venue = input.location ? localizeText(input.location) : null;
-  const lines = [
-    `繁：${headline.hant}`,
-    `简：${headline.hans}`,
-    `EN: ${headline.en}`,
-  ];
+  let paragraph = `繁體是${headline.hant}`;
+  if (headline.hans !== headline.hant) paragraph += `，簡體是${headline.hans}`;
+  if (headline.en !== headline.hant) paragraph += `，英文是 ${headline.en}`;
+  paragraph += "。";
   if (venue) {
-    lines.push(`場地：${venue.hant}`, `场地：${venue.hans}`, `Venue: ${venue.en}`);
+    paragraph +=
+      venue.hant === venue.en ? `比賽在${venue.hant}舉行。` : `比賽在${venue.hant}舉行（${venue.en}）。`;
   }
   if (!input.timeConfirmed) {
-    lines.push("開賽時間未定", "开赛时间未定", "Kickoff time is not confirmed yet.");
+    paragraph += "開賽時間尚未確定。";
   }
-  if (input.description) lines.push(input.description);
-  lines.push("賽程來自 Sporttime，時間或會改期。", "赛程来自 Sporttime，时间可能会改期。", "Times follow the source feed and may change.");
-  return lines.join("\n");
+  if (input.description) paragraph += input.description.trim().endsWith("。") ? input.description : `${input.description}。`;
+  paragraph += "賽程來自 Sporttime，時間或會改期。";
+  return paragraph;
 }

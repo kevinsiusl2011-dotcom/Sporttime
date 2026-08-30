@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { eventSummary, localizeText, trilingual } from "./localize.ts";
+import { eventDescription, eventSummary, localizeText, trilingual } from "./localize.ts";
 
 test("localizes a known matchup into both Chinese scripts", () => {
   const text = localizeText("Arsenal vs Chelsea");
@@ -17,14 +17,25 @@ test("keeps unknown names in English while translating vs", () => {
 
 test("builds a trilingual calendar summary", () => {
   const summary = eventSummary("English Premier League", "Manchester City vs Liverpool");
-  assert.match(summary, /英超：曼城對利物浦/);
-  assert.match(summary, /英超：曼城对利物浦/);
-  assert.match(summary, /English Premier League: Manchester City vs Liverpool/);
+  assert.equal(summary, "英超：曼城對利物浦（簡體：英超：曼城对利物浦；English Premier League: Manchester City vs Liverpool）");
 });
 
 test("collapses identical scripts", () => {
   assert.equal(trilingual("NBA"), "NBA");
-  assert.match(trilingual("Soccer"), /足球/);
+  assert.equal(trilingual("Soccer"), "足球（Soccer）");
+});
+
+test("writes calendar details as one paragraph", () => {
+  const description = eventDescription({
+    league: "English Premier League",
+    title: "Arsenal vs Chelsea",
+    location: "Emirates Stadium",
+    timeConfirmed: true,
+  });
+  assert.match(description, /繁體是英超：阿仙奴對車路士/);
+  assert.match(description, /簡體是英超：阿森纳对切尔西/);
+  assert.match(description, /英文是 English Premier League: Arsenal vs Chelsea/);
+  assert.equal(description.includes("\n"), false);
 });
 
 test("shows Chinese names for Messi and Pogacar", () => {
