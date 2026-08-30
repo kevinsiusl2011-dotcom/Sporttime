@@ -72,7 +72,7 @@ MIT. See [LICENSE](LICENSE).
 
 公開網站：https://sporttime-delta.vercel.app
 
-朋友開條 link，用自己嘅 Google 登入，未來賽程會寫入佢自己日曆入面一個叫 **Sporttime** 嘅獨立日曆。程式亦放�曆入面一個叫 **Sporttime** 嘅獨立日曆。程式亦放咗喺 GitHub。
+朋友開條 link，用自己嘅 Google 登入，未來賽程會寫入佢自己日曆入面一個叫 **Sporttime** 嘅獨立日曆。程式亦放咗喺 GitHub。
 
 ## 做得到咩
 
