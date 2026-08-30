@@ -121,7 +121,7 @@ export const CATALOG: CatalogEntry[] = [
   { id: "4537", name: "Polish Handball Superliga", sport: "Handball", country: "Poland" },
 
   { id: "4554", name: "PDC Darts", sport: "Darts", country: "World" },
-  { id: "4555", name: "World Snooker", sport: "Snooker", country: "World" },
+  { id: "4555", name: "World Snooker", sport: "Snooker", country: "World", aliases: ["Snooker", "桌球", "斯诺克"] },
   { id: "4558", name: "Mens FIH Pro League", sport: "Field Hockey", country: "World" },
   { id: "5282", name: "Diamond League", sport: "Athletics", country: "World" },
   { id: "5007", name: "World Athletics Championships", sport: "Athletics", country: "World" },

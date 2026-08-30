@@ -51,3 +51,7 @@ export async function addFollow(input: {
 export async function removeFollow(userId: string, kind: FollowKind, sourceId: string) {
   await dbRun("DELETE FROM follows WHERE user_id = ? AND kind = ? AND source_id = ?", [userId, kind, sourceId]);
 }
+
+export async function removeAllFollows(userId: string) {
+  await dbRun("DELETE FROM follows WHERE user_id = ?", [userId]);
+}

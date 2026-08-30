@@ -1,5 +1,6 @@
 import { FollowButton } from "@/components/follow-button";
 import { Nav } from "@/components/nav";
+import { UnfollowAllButton } from "@/components/unfollow-all-button";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
@@ -15,7 +16,16 @@ export default async function FollowsPage() {
     <div>
       <Nav t={t} locale={locale} />
       <main className="mx-auto max-w-4xl px-5 py-10">
-        <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.following}</h1>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.following}</h1>
+          {follows.length > 0 ? (
+            <UnfollowAllButton
+              label={t.unfollowAll}
+              confirmLabel={t.unfollowAllConfirm}
+              pendingLabel={t.unfollowingAll}
+            />
+          ) : null}
+        </div>
         {follows.length === 0 ? (
           <p className="mt-6 text-[var(--muted)]">{t.emptyFollows}</p>
         ) : (

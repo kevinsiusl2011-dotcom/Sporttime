@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BrowseSubnav } from "@/components/browse-subnav";
 import { FollowButton } from "@/components/follow-button";
 import { Nav } from "@/components/nav";
 import { listFollows } from "@/lib/follows";
@@ -43,6 +44,7 @@ export default async function SportBrowsePage({ params }: { params: Promise<{ sp
           />
         </div>
         <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.browseSportHelp}</p>
+        <BrowseSubnav t={t} current="leagues" sportSlug={slug} />
         <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {leagues.map((league) => (
             <article key={league.id} className="card flex flex-col justify-between p-5">

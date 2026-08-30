@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrowseSubnav } from "@/components/browse-subnav";
 import { FollowButton } from "@/components/follow-button";
 import { Nav } from "@/components/nav";
 import { listFollows } from "@/lib/follows";
@@ -21,6 +22,7 @@ export default async function BrowsePage() {
       <main className="mx-auto max-w-6xl px-5 py-10">
         <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.browse}</h1>
         <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.browseHelp}</p>
+        <BrowseSubnav t={t} current="leagues" />
 
         <section className="mt-10">
           <h2 className="font-[family-name:var(--font-serif)] text-2xl">{t.allSports}</h2>

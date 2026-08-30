@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { addFollow, listFollows, removeFollow } from "@/lib/follows";
+import { addFollow, listFollows, removeAllFollows, removeFollow } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { rebuildUserFeed } from "@/lib/sync/engine";
 
@@ -10,6 +10,11 @@ const bodySchema = z.object({
   sport: z.string().optional(),
   extra: z.record(z.string(), z.unknown()).optional(),
 });
+
+const deleteSchema = z.union([
+  z.object({ all: z.literal(true) }),
+  bodySchema.pick({ kind: true, sourceId: true }),
+]);
 
 async function refreshFeed(userId: string) {
   try {
@@ -43,9 +48,13 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const user = await ensureUserRecord();
-  const parsed = bodySchema.pick({ kind: true, sourceId: true }).safeParse(await request.json());
+  const parsed = deleteSchema.safeParse(await request.json());
   if (!parsed.success) return Response.json({ error: "Invalid body" }, { status: 400 });
-  await removeFollow(user.id, parsed.data.kind, parsed.data.sourceId);
+  if ("all" in parsed.data) {
+    await removeAllFollows(user.id);
+  } else {
+    await removeFollow(user.id, parsed.data.kind, parsed.data.sourceId);
+  }
   await refreshFeed(user.id);
   return Response.json({ ok: true });
 }

@@ -2,6 +2,7 @@ import { dbGet, dbRun } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { athleteSearchTerms, eventMentionsAthlete, isRosterSport } from "@/lib/sports/athlete";
 import { findCatalogLeague, leaguesForSport, searchCatalogLeagues } from "@/lib/sports/catalog";
+import { searchPopularAthletes } from "@/lib/sports/popular-athletes";
 import { currentSeason, nearbySeasons } from "@/lib/sports/season";
 import { asRecords, resolveSearchQuery } from "@/lib/sports/search-query";
 import { isUpcoming, normalizeEvent } from "@/lib/sports/normalize";
@@ -199,15 +200,19 @@ export async function searchAll(query: string): Promise<SearchResults> {
   ).slice(0, 12);
 
   const athletes = uniqueBy(
-    asRecords(playersData.player).map((item) => ({
-      id: item.idPlayer,
-      name: item.strPlayer,
-      sport: item.strSport,
-      team: item.strTeam,
-      teamId: item.idTeam,
-      nationality: item.strNationality,
-      thumb: item.strThumb || item.strCutout,
-    })),
+    [
+      ...searchPopularAthletes(catalogQuery),
+      ...searchPopularAthletes(remoteQuery),
+      ...asRecords(playersData.player).map((item) => ({
+        id: item.idPlayer,
+        name: item.strPlayer,
+        sport: item.strSport,
+        team: item.strTeam,
+        teamId: item.idTeam,
+        nationality: item.strNationality,
+        thumb: item.strThumb || item.strCutout,
+      })),
+    ],
     (item) => item.id,
   ).slice(0, 12);
 
