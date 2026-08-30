@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+dist
+data
+*.db
+*.db-journal
+.env
+.env.local
+.DS_Store
+npm-debug.log*
+tsconfig.tsbuildinfo
+.vercel
+.firebase

@@ -1,0 +1,24 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - sporttime-data:/app/data
+    restart: unless-stopped
+
+  scheduler:
+    build: .
+    command: npx tsx scripts/scheduler.ts
+    env_file:
+      - .env
+    environment:
+      AUTH_URL: http://app:3000
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  sporttime-data:

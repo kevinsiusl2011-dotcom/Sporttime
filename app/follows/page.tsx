@@ -1,0 +1,47 @@
+import { redirect } from "next/navigation";
+import { FollowButton } from "@/components/follow-button";
+import { Nav } from "@/components/nav";
+import { auth } from "@/lib/auth";
+import { listFollows } from "@/lib/follows";
+import { getDictionary } from "@/lib/i18n";
+import type { FollowKind } from "@/lib/sports/types";
+
+export default async function FollowsPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/");
+  const { t, locale } = await getDictionary();
+  const follows = await listFollows(session.user.id);
+
+  return (
+    <div>
+      <Nav t={t} locale={locale} />
+      <main className="mx-auto max-w-4xl px-5 py-10">
+        <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.following}</h1>
+        {follows.length === 0 ? (
+          <p className="mt-6 text-[var(--muted)]">{t.emptyFollows}</p>
+        ) : (
+          <ul className="mt-8 space-y-3">
+            {follows.map((follow) => (
+              <li key={follow.id} className="card flex items-center justify-between px-4 py-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-[var(--gold)]">{follow.kind}</p>
+                  <p className="mt-1 text-lg">{follow.label}</p>
+                  <p className="text-sm text-[var(--muted)]">{follow.sport}</p>
+                </div>
+                <FollowButton
+                  kind={follow.kind as FollowKind}
+                  sourceId={follow.source_id}
+                  label={follow.label}
+                  sport={follow.sport ?? undefined}
+                  following
+                  followLabel={t.follow}
+                  unfollowLabel={t.unfollow}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </main>
+    </div>
+  );
+}

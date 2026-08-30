@@ -1,0 +1,41 @@
+{
+  "name": "sporttime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted sports calendar that syncs upcoming fixtures to your Google Calendar.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "tsx --test lib/**/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "scheduler": "tsx scripts/scheduler.ts"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.4.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.24",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.4",
+    "clsx": "^2.1.1",
+    "firebase": "^12.18.0",
+    "googleapis": "^176.0.0",
+    "jose": "^6.2.10",
+    "next": "^15.5.24",
+    "next-auth": "^5.0.0-beta.32",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.5.2"
+  }
+}
