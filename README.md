@@ -4,6 +4,8 @@ Sports calendar you can open in a browser. Follow leagues, clubs, or athletes, t
 
 Hosted for anyone with the link. Each person signs in with their own Google account. The source is also on GitHub if you want to run your own copy.
 
+Live site: https://sporttime-delta.vercel.app
+
 [繁體中文說明](#sporttime-繁體中文)
 
 ## What it does
@@ -68,9 +70,9 @@ MIT. See [LICENSE](LICENSE).
 
 # Sporttime（繁體中文）
 
-開源自架運動日曆。追蹤聯賽、球隊或運動員，未來賽程會寫入你自己 Google 帳號入面一個叫 **Sporttime** 嘅獨立日曆。
+公開網站：https://sporttime-delta.vercel.app
 
-你行自己嘅實例，用自己把 Google OAuth 同 TheSportsDB key。冇中央伺服器，亦唔會代人保管日曆授權。
+朋友開條 link，用自己嘅 Google 登入，未來賽程會寫入佢自己日曆入面一個叫 **Sporttime** 嘅獨立日曆。程式亦放�曆入面一個叫 **Sporttime** 嘅獨立日曆。程式亦放咗喺 GitHub。
 
 ## 做得到咩
 
