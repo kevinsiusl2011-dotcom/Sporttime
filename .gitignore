@@ -12,3 +12,4 @@ npm-debug.log*
 tsconfig.tsbuildinfo
 .vercel
 .firebase
+.env*

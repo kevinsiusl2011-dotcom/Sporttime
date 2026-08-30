@@ -1,8 +1,8 @@
 # Sporttime
 
-Self-hosted sports calendar. Follow leagues, clubs, or athletes, then sync upcoming fixtures into a dedicated **Sporttime** calendar on your own Google account.
+Sports calendar you can open in a browser. Follow leagues, clubs, or athletes, then sync upcoming fixtures into a dedicated **Sporttime** calendar on your own Google account.
 
-Open source. You run it. You bring your own Google OAuth client and TheSportsDB key. There is no central Sporttime server and nobody else holds your calendar tokens.
+Hosted for anyone with the link. Each person signs in with their own Google account. The source is also on GitHub if you want to run your own copy.
 
 [繁體中文說明](#sporttime-繁體中文)
 

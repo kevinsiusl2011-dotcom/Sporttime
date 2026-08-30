@@ -1,29 +1,39 @@
 import { createClient, type Client, type InValue } from "@libsql/client";
+import { neon } from "@neondatabase/serverless";
 import fs from "fs";
 import path from "path";
 
-let client: Client | null = null;
+type Row = Record<string, unknown>;
+
+const postgresUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const isPostgres = Boolean(postgresUrl?.startsWith("postgres"));
+
+let libsql: Client | null = null;
 let migrated = false;
 
-function databaseUrl() {
-  if (process.env.TURSO_DATABASE_URL) return process.env.TURSO_DATABASE_URL;
+function fileUrl() {
   const file = process.env.DATABASE_PATH || path.join(process.cwd(), "data", "sporttime.db");
   fs.mkdirSync(path.dirname(file), { recursive: true });
   return `file:${file}`;
 }
 
-export function getClient(): Client {
-  if (client) return client;
-  client = createClient({
-    url: databaseUrl(),
+function sqliteClient() {
+  if (libsql) return libsql;
+  libsql = createClient({
+    url: process.env.TURSO_DATABASE_URL || fileUrl(),
     authToken: process.env.TURSO_AUTH_TOKEN,
   });
-  return client;
+  return libsql;
 }
 
-async function migrate() {
-  if (migrated) return;
-  await getClient().executeMultiple(`
+function toPostgres(sql: string) {
+  let index = 0;
+  return sql
+    .replace(/datetime\('now'\)/g, "CURRENT_TIMESTAMP")
+    .replace(/\?/g, () => `$${++index}`);
+}
+
+const SQLITE_SCHEMA = `
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
@@ -35,7 +45,6 @@ async function migrate() {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-
     CREATE TABLE IF NOT EXISTS google_accounts (
       user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       refresh_token_enc TEXT NOT NULL,
@@ -45,7 +54,6 @@ async function migrate() {
       scope TEXT,
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-
     CREATE TABLE IF NOT EXISTS follows (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -58,14 +66,12 @@ async function migrate() {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE (user_id, kind, source, source_id)
     );
-
     CREATE TABLE IF NOT EXISTS fixture_cache (
       cache_key TEXT PRIMARY KEY,
       payload_json TEXT NOT NULL,
       fetched_at INTEGER NOT NULL,
       expires_at INTEGER NOT NULL
     );
-
     CREATE TABLE IF NOT EXISTS synced_events (
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       source TEXT NOT NULL,
@@ -75,16 +81,33 @@ async function migrate() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (user_id, source, source_id)
     );
-
     CREATE INDEX IF NOT EXISTS idx_follows_user ON follows(user_id);
     CREATE INDEX IF NOT EXISTS idx_synced_user ON synced_events(user_id);
-  `);
+`;
+
+async function migrate() {
+  if (migrated) return;
+  const statements = SQLITE_SCHEMA.split(";")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (isPostgres) {
+    const sql = neon(postgresUrl!);
+    for (const statement of statements) {
+      await sql.query(toPostgres(statement), []);
+    }
+  } else {
+    await sqliteClient().executeMultiple(SQLITE_SCHEMA);
+  }
   migrated = true;
 }
 
 export async function dbAll<T>(sql: string, args: InValue[] = []): Promise<T[]> {
   await migrate();
-  const result = await getClient().execute({ sql, args });
+  if (isPostgres) {
+    const rows = (await neon(postgresUrl!).query(toPostgres(sql), args as (string | number | boolean | null)[])) as Row[];
+    return rows as T[];
+  }
+  const result = await sqliteClient().execute({ sql, args });
   return result.rows as unknown as T[];
 }
 
@@ -94,8 +117,7 @@ export async function dbGet<T>(sql: string, args: InValue[] = []): Promise<T | u
 }
 
 export async function dbRun(sql: string, args: InValue[] = []): Promise<void> {
-  await migrate();
-  await getClient().execute({ sql, args });
+  await dbAll(sql, args);
 }
 
 export type UserRow = {

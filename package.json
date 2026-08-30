@@ -11,7 +11,8 @@
     "lint": "next lint",
     "test": "tsx --test lib/**/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "scheduler": "tsx scripts/scheduler.ts"
+    "scheduler": "tsx scripts/scheduler.ts",
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",
@@ -28,6 +29,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
+    "@neondatabase/serverless": "^1.1.0",
     "clsx": "^2.1.1",
     "firebase": "^12.18.0",
     "googleapis": "^176.0.0",
