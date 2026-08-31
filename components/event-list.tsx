@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BilingualName } from "@/components/bilingual-name";
 import { formatDateTime } from "@/lib/utils";
 import type { SportEvent } from "@/lib/sports/types";
@@ -8,14 +9,27 @@ export function EventList({
   t,
   locale,
   empty,
+  emptyHref,
+  emptyCta,
 }: {
   events: SportEvent[];
   t: Dictionary;
   locale: Locale;
   empty: string;
+  emptyHref?: string;
+  emptyCta?: string;
 }) {
   if (events.length === 0) {
-    return <p className="text-[var(--muted)]">{empty}</p>;
+    return (
+      <div className="space-y-3">
+        <p className="text-[var(--muted)]">{empty}</p>
+        {emptyHref && emptyCta ? (
+          <Link href={emptyHref} className="btn-primary inline-flex rounded-full px-5 py-2.5 text-sm">
+            {emptyCta}
+          </Link>
+        ) : null}
+      </div>
+    );
   }
 
   return (

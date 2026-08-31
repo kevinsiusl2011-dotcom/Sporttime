@@ -6,7 +6,8 @@ import { dbAll, dbGet, dbRun, type FollowRow, type UserRow } from "@/lib/db";
 import { parseReminders } from "@/lib/env";
 import type { SportEvent } from "@/lib/sports/types";
 
-const FEED_TTL_MS = 45 * 60 * 1000;
+/** Rebuild cached ICS / preview JSON at least this often so subscriptions stay fresh. */
+export const FEED_TTL_MS = 45 * 60 * 1000;
 
 export type SyncResult = {
   scanned: number;
@@ -75,9 +76,21 @@ export async function eventsForPreview(userId: string): Promise<SportEvent[]> {
 }
 
 export async function calendarBodyForUser(user: UserRow): Promise<string> {
-  if (user.feed_ics) return user.feed_ics;
-  const events = await rebuildUserFeed(user.id);
-  return buildCalendar(events, user.reminder_minutes);
+  const builtAt = Number(user.feed_built_at ?? 0);
+  const fresh = Boolean(user.feed_ics && Date.now() - builtAt < FEED_TTL_MS);
+  if (fresh && user.feed_ics) return user.feed_ics;
+
+  try {
+    await rebuildUserFeed(user.id);
+    const updated = await dbGet<UserRow>("SELECT * FROM users WHERE id = ?", [user.id]);
+    if (updated?.feed_ics) return updated.feed_ics;
+  } catch (error) {
+    console.error("Failed to rebuild calendar feed", user.id, error);
+    if (user.feed_ics) return user.feed_ics;
+    throw error;
+  }
+
+  return buildCalendar([], user.reminder_minutes);
 }
 
 async function mapPool<T, R>(items: T[], concurrency: number, worker: (item: T) => Promise<R>): Promise<R[]> {

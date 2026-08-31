@@ -186,6 +186,7 @@ function ResultGroup({
               following={followed.has(`${item.kind}:${item.id}`)}
               followLabel={t.follow}
               unfollowLabel={t.unfollow}
+              errorLabel={t.followFailed}
             />
           </li>
         ))}

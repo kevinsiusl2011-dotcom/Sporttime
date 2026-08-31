@@ -480,18 +480,29 @@ async function resolveAthleteClub(
   };
 }
 
-async function persistAthleteClub(sourceId: string, club: {
-  teamId: string;
-  team?: string;
-  leagueId?: string;
-  playerId?: string;
-}) {
+const ATHLETE_CLUB_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+
+async function persistAthleteClub(
+  sourceId: string,
+  club: {
+    teamId: string;
+    team?: string;
+    leagueId?: string;
+    playerId?: string;
+  },
+  force = false,
+) {
   const payload = JSON.stringify({
     teamId: club.teamId,
     team: club.team ?? null,
     leagueId: club.leagueId ?? null,
     playerId: club.playerId ?? null,
+    resolvedAt: Date.now(),
   });
+  if (force) {
+    await dbRun(`UPDATE follows SET extra_json = ? WHERE kind = 'athlete' AND source_id = ?`, [payload, sourceId]);
+    return;
+  }
   await dbRun(
     `UPDATE follows SET extra_json = ? WHERE kind = 'athlete' AND source_id = ? AND (extra_json IS NULL OR extra_json = '' OR extra_json = '{}' OR extra_json NOT LIKE '%teamId%')`,
     [payload, sourceId],
@@ -508,15 +519,17 @@ async function upcomingForAthlete(follow: {
   let teamId = extra.teamId as string | undefined;
   let teamName = extra.team as string | undefined;
   let leagueId = extra.leagueId as string | undefined;
+  const resolvedAt = Number(extra.resolvedAt ?? 0);
+  const clubStale = !resolvedAt || Date.now() - resolvedAt > ATHLETE_CLUB_REFRESH_MS;
 
-  if (!teamId) {
+  if (!teamId || (isRosterSport(follow.sport) && clubStale)) {
     const resolved = await resolveAthleteClub(follow.label, follow.sport);
     if (resolved?.teamId) {
       teamId = resolved.teamId;
       teamName = resolved.team ?? teamName;
       leagueId = resolved.leagueId ?? leagueId;
       try {
-        await persistAthleteClub(follow.source_id, resolved);
+        await persistAthleteClub(follow.source_id, resolved, Boolean(extra.teamId));
       } catch (error) {
         console.error("Failed to persist athlete club", follow.source_id, error);
       }

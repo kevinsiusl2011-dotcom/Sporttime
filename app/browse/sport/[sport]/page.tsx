@@ -41,6 +41,7 @@ export default async function SportBrowsePage({ params }: { params: Promise<{ sp
             following={following.has(`sport:${sport}`)}
             followLabel={t.follow}
             unfollowLabel={t.unfollow}
+            errorLabel={t.followFailed}
           />
         </div>
         <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.browseSportHelp}</p>
@@ -67,6 +68,7 @@ export default async function SportBrowsePage({ params }: { params: Promise<{ sp
                   following={following.has(`league:${league.id}`)}
                   followLabel={t.follow}
                   unfollowLabel={t.unfollow}
+                  errorLabel={t.followFailed}
                 />
               </div>
             </article>

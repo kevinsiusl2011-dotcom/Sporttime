@@ -67,6 +67,7 @@ export default async function BrowsePage() {
                         following={following.has(`league:${league.id}`)}
                         followLabel={t.follow}
                         unfollowLabel={t.unfollow}
+                        errorLabel={t.followFailed}
                       />
                     </div>
                   </article>

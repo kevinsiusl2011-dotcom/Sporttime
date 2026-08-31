@@ -38,16 +38,17 @@ export function EntityFollowGrid({
               </p>
             ) : null}
           </div>
-          <FollowButton
-            kind={kind}
-            sourceId={item.id}
-            label={item.name}
-            sport={item.sport}
-            extra={item.extra}
-            following={following.has(`${kind}:${item.id}`)}
-            followLabel={t.follow}
-            unfollowLabel={t.unfollow}
-          />
+                <FollowButton
+                  kind={kind}
+                  sourceId={item.id}
+                  label={item.name}
+                  sport={item.sport}
+                  extra={item.extra}
+                  following={following.has(`${kind}:${item.id}`)}
+                  followLabel={t.follow}
+                  unfollowLabel={t.unfollow}
+                  errorLabel={t.followFailed}
+                />
         </article>
       ))}
     </div>

@@ -42,6 +42,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
             following={following.has(`league:${league.id}`)}
             followLabel={t.follow}
             unfollowLabel={t.unfollow}
+            errorLabel={t.followFailed}
           />
         </div>
 
@@ -72,6 +73,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
                   following={following.has(`team:${team.id}`)}
                   followLabel={t.follow}
                   unfollowLabel={t.unfollow}
+                  errorLabel={t.followFailed}
                 />
               </article>
             ))}

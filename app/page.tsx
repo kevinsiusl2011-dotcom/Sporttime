@@ -74,6 +74,7 @@ export default async function HomePage() {
                   following={following.has(`league:${league.id}`)}
                   followLabel={t.follow}
                   unfollowLabel={t.unfollow}
+                  errorLabel={t.followFailed}
                 />
               </article>
             ))}

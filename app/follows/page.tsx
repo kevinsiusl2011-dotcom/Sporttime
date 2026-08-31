@@ -51,6 +51,7 @@ export default async function FollowsPage() {
                   following
                   followLabel={t.follow}
                   unfollowLabel={t.unfollow}
+                  errorLabel={t.followFailed}
                 />
               </li>
             ))}
