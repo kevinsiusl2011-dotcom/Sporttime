@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Newsreader } from "next/font/google";
 import { getDictionary } from "@/lib/i18n";
+import { publicAppUrl } from "@/lib/urls";
 import "./globals.css";
 
 const sans = DM_Sans({
@@ -13,11 +14,37 @@ const serif = Newsreader({
   variable: "--font-serif",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#090c0b",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { t } = await getDictionary();
+  const { t, locale } = await getDictionary();
+  const url = publicAppUrl();
+  const title = `${t.brand} — ${t.tagline}`;
   return {
-    title: `${t.brand} — ${t.tagline}`,
+    metadataBase: new URL(url),
+    title: {
+      default: title,
+      template: `%s · ${t.brand}`,
+    },
     description: t.heroBody,
+    applicationName: t.brand,
+    openGraph: {
+      title,
+      description: t.heroBody,
+      url,
+      siteName: t.brand,
+      locale: locale === "en" ? "en_GB" : locale.replace("-", "_"),
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description: t.heroBody,
+    },
   };
 }
 

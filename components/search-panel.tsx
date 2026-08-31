@@ -73,13 +73,18 @@ export function SearchPanel({
   return (
     <div className="space-y-8">
       <input
+        type="search"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder={t.searchPlaceholder}
+        aria-label={t.search}
+        autoFocus
+        autoComplete="off"
+        enterKeyHint="search"
         className="w-full rounded-2xl border border-[var(--line)] bg-[var(--bg-elevated)] px-5 py-4 text-lg outline-none focus:border-[var(--accent)]"
       />
       {query.trim().length < 2 ? <p className="text-[var(--muted)]">{t.emptySearch}</p> : null}
-      {pending ? <p className="text-[var(--muted)]">…</p> : null}
+      {pending ? <p className="text-[var(--muted)]">{t.loadingSearch}</p> : null}
       {ready && failed ? <p className="text-[var(--muted)]">{t.searchFailed}</p> : null}
       {empty ? <p className="text-[var(--muted)]">{t.searchNoResults}</p> : null}
       {results && !pending ? (
@@ -187,6 +192,7 @@ function ResultGroup({
               followLabel={t.follow}
               unfollowLabel={t.unfollow}
               errorLabel={t.followFailed}
+              pendingLabel={t.followPending}
             />
           </li>
         ))}

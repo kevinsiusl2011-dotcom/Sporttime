@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { formatDateTime } from "../utils.ts";
+import { addCalendarDays, formatDateTime, formatTime, zonedYmd } from "../utils.ts";
 
 test("shows kickoff in Hong Kong time instead of UTC", () => {
   const text = formatDateTime("2026-09-12T14:00:00.000Z", "zh-Hant");
@@ -19,4 +19,19 @@ test("uses simplified copy for Hong Kong time", () => {
   const text = formatDateTime("2026-09-12T14:00:00.000Z", "zh-Hans");
   assert.match(text, /22:00/);
   assert.match(text, /香港时间/);
+});
+
+test("keys fixtures by Hong Kong calendar day", () => {
+  assert.equal(zonedYmd("2026-09-12T14:00:00.000Z"), "2026-09-12");
+  assert.equal(zonedYmd("2026-09-12T16:30:00.000Z"), "2026-09-13");
+});
+
+test("adds civil days without using the wall clock", () => {
+  assert.equal(addCalendarDays("2026-09-12", 1), "2026-09-13");
+  assert.equal(addCalendarDays("2026-12-31", 1), "2027-01-01");
+});
+
+test("shows kickoff time only in 24-hour Hong Kong clock", () => {
+  assert.equal(formatTime("2026-09-12T14:00:00.000Z", "zh-Hant"), "22:00");
+  assert.equal(formatTime("2026-09-12T14:00:00.000Z", "en"), "22:00");
 });

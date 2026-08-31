@@ -14,6 +14,7 @@ export function FollowButton({
   followLabel,
   unfollowLabel,
   errorLabel = "操作失敗，請再試。",
+  pendingLabel = "…",
 }: {
   kind: FollowKind;
   sourceId: string;
@@ -24,6 +25,7 @@ export function FollowButton({
   followLabel: string;
   unfollowLabel: string;
   errorLabel?: string;
+  pendingLabel?: string;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -61,9 +63,11 @@ export function FollowButton({
         type="button"
         onClick={toggle}
         disabled={pending}
+        aria-pressed={on}
+        aria-busy={pending}
         className={`rounded-full px-4 py-2 text-sm ${on ? "btn-ghost" : "btn-primary"}`}
       >
-        {on ? unfollowLabel : followLabel}
+        {pending ? pendingLabel : on ? unfollowLabel : followLabel}
       </button>
       {error ? <p className="max-w-[10rem] text-right text-xs text-[var(--danger)]">{error}</p> : null}
     </div>

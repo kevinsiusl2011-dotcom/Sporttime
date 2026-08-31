@@ -1,5 +1,9 @@
 export type Locale = "zh-Hant" | "zh-Hans" | "en";
 
+export function isLocale(value: string | undefined | null): value is Locale {
+  return value === "zh-Hant" || value === "zh-Hans" || value === "en";
+}
+
 export const dictionaries = {
   "zh-Hant": {
     brand: "Sporttime",
@@ -124,6 +128,21 @@ export const dictionaries = {
     signInHelp: "用 Google 登入之後，換機都會見到同一批追蹤。",
     quickFollowsTitle: "一撳開始追",
     homeSubscribeHint: "追蹤咗就可以加入日曆；訂閱一次之後，之後賽事會自動更新。",
+    errorTitle: "出咗啲問題",
+    errorRetry: "再試一次",
+    notFoundTitle: "搵唔到呢頁",
+    notFoundBody: "可能連結過期，或者頁面搬走咗。",
+    backHome: "返回首頁",
+    loadingSearch: "正在搜尋…",
+    followPending: "處理中…",
+    saved: "已儲存",
+    saveFailed: "儲存失敗，請再試。",
+    today: "今日",
+    tomorrow: "聽日",
+    followingCount: "已追蹤 {count} 項",
+    goToPreview: "去預覽賽程",
+    copyFailed: "複製失敗，請手動反白網址。",
+    loadingPage: "載入中…",
   },
   "zh-Hans": {
     brand: "Sporttime",
@@ -248,6 +267,21 @@ export const dictionaries = {
     signInHelp: "用 Google 登录之后，换机都会看到同一批追踪。",
     quickFollowsTitle: "一键开始追",
     homeSubscribeHint: "追踪后即可加入日历；订阅一次之后，之后赛程会自动更新。",
+    errorTitle: "出了点问题",
+    errorRetry: "再试一次",
+    notFoundTitle: "找不到这一页",
+    notFoundBody: "可能链接过期，或页面已经搬走。",
+    backHome: "返回首页",
+    loadingSearch: "正在搜索…",
+    followPending: "处理中…",
+    saved: "已保存",
+    saveFailed: "保存失败，请再试。",
+    today: "今天",
+    tomorrow: "明天",
+    followingCount: "已追踪 {count} 项",
+    goToPreview: "去预览赛程",
+    copyFailed: "复制失败，请手动反白网址。",
+    loadingPage: "加载中…",
   },
   en: {
     brand: "Sporttime",
@@ -373,6 +407,21 @@ export const dictionaries = {
     signInHelp: "Sign in with Google to keep the same follows on every device.",
     quickFollowsTitle: "Follow in one tap",
     homeSubscribeHint: "Follow something, then subscribe once — fixtures keep updating after that.",
+    errorTitle: "Something went wrong",
+    errorRetry: "Try again",
+    notFoundTitle: "Page not found",
+    notFoundBody: "The link may be old, or this page has moved.",
+    backHome: "Back home",
+    loadingSearch: "Searching…",
+    followPending: "Working…",
+    saved: "Saved",
+    saveFailed: "Couldn’t save. Try again.",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    followingCount: "Following {count}",
+    goToPreview: "Preview fixtures",
+    copyFailed: "Couldn’t copy. Select the URL instead.",
+    loadingPage: "Loading…",
   },
 } as const;
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BrowseSubnav } from "@/components/browse-subnav";
 import { EntityFollowGrid } from "@/components/entity-follow-grid";
-import { Nav } from "@/components/nav";
+import { AppFrame } from "@/components/app-frame";
 import { SportChipRow } from "@/components/sport-chip-row";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
@@ -24,17 +24,15 @@ export default async function SportTeamsPage({ params }: { params: Promise<{ spo
   const following = new Set(follows.map((follow) => `${follow.kind}:${follow.source_id}`));
 
   return (
-    <div>
-      <Nav t={t} locale={locale} />
-      <main className="mx-auto max-w-6xl px-5 py-10">
-        <p className="text-sm text-[var(--gold)]">
-          <Link href="/browse" className="hover:text-[var(--accent)]">
-            {t.browse}
-          </Link>
-        </p>
-        <h1 className="mt-2 font-[family-name:var(--font-serif)] text-4xl">{t.browseTeams}</h1>
-        <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.browseTeamsHelp}</p>
-        <BrowseSubnav t={t} current="teams" sportSlug={slug} />
+    <AppFrame t={t} locale={locale} wide>
+      <p className="text-sm text-[var(--gold)]">
+        <Link href="/browse" className="hover:text-[var(--accent)]">
+          {t.browse}
+        </Link>
+      </p>
+      <h1 className="mt-2 font-[family-name:var(--font-serif)] text-4xl">{t.browseTeams}</h1>
+      <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.browseTeamsHelp}</p>
+      <BrowseSubnav t={t} current="teams" sportSlug={slug} />
         <SportChipRow
           sports={sports}
           selected={sport}
@@ -75,7 +73,6 @@ export default async function SportTeamsPage({ params }: { params: Promise<{ spo
             ))
           )}
         </div>
-      </main>
-    </div>
+    </AppFrame>
   );
 }

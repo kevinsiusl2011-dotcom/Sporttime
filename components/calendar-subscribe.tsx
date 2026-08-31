@@ -3,15 +3,37 @@
 import { useState } from "react";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
+function copyText(value: string) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(value);
+  }
+  const field = document.createElement("textarea");
+  field.value = value;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.left = "-9999px";
+  document.body.appendChild(field);
+  field.select();
+  document.execCommand("copy");
+  document.body.removeChild(field);
+  return Promise.resolve();
+}
+
 export function CalendarSubscribe({ feedUrl, t }: { feedUrl: string; t: Dictionary }) {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
   const appleUrl = feedUrl.replace(/^https?:/i, "webcal:");
   const googleUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(appleUrl)}`;
 
   async function copy() {
-    await navigator.clipboard.writeText(feedUrl);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
+    setCopyError(false);
+    try {
+      await copyText(feedUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopyError(true);
+    }
   }
 
   return (
@@ -35,6 +57,7 @@ export function CalendarSubscribe({ feedUrl, t }: { feedUrl: string; t: Dictiona
           {copied ? t.copied : t.copyLink}
         </button>
       </div>
+      {copyError ? <p className="text-sm text-[var(--danger)]">{t.copyFailed}</p> : null}
       <p className="text-sm text-[var(--muted)]">{t.recoveryHelp}</p>
     </section>
   );

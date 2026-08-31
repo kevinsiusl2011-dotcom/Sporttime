@@ -48,6 +48,7 @@ export function EntityFollowGrid({
                   followLabel={t.follow}
                   unfollowLabel={t.unfollow}
                   errorLabel={t.followFailed}
+                  pendingLabel={t.followPending}
                 />
         </article>
       ))}

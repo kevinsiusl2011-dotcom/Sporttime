@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { companyBranding } from "@/lib/branding";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
-import { getDictionary } from "@/lib/i18n";
+import { getDictionary, interpolate } from "@/lib/i18n";
 import { displayName } from "@/lib/i18n/localize";
 import { quickFollowLeagues } from "@/lib/sports/quick-follows";
 import { calendarFeedUrl } from "@/lib/urls";
@@ -27,6 +27,7 @@ export default async function HomePage() {
     // instance without AUTH_SECRET still shows the landing page
   }
   const quick = quickFollowLeagues();
+  const followCount = following.size;
 
   return (
     <div>
@@ -45,13 +46,31 @@ export default async function HomePage() {
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-[var(--muted)] md:text-lg">
               {t.heroBody}
             </p>
+            {followCount > 0 ? (
+              <p className="mt-4 text-sm text-[var(--gold)]">
+                {interpolate(t.followingCount, { count: followCount })}
+              </p>
+            ) : null}
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/browse" className="btn-primary rounded-full px-6 py-3 text-sm md:text-base">
-                {t.landingCta}
-              </Link>
-              <Link href="/preview" className="btn-ghost rounded-full px-6 py-3 text-sm md:text-base">
-                {t.addToGoogle}
-              </Link>
+              {followCount > 0 ? (
+                <>
+                  <Link href="/preview" className="btn-primary rounded-full px-6 py-3 text-sm md:text-base">
+                    {t.goToPreview}
+                  </Link>
+                  <Link href="/browse" className="btn-ghost rounded-full px-6 py-3 text-sm md:text-base">
+                    {t.browse}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/browse" className="btn-primary rounded-full px-6 py-3 text-sm md:text-base">
+                    {t.landingCta}
+                  </Link>
+                  <Link href="/preview" className="btn-ghost rounded-full px-6 py-3 text-sm md:text-base">
+                    {t.addToGoogle}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -75,6 +94,7 @@ export default async function HomePage() {
                   followLabel={t.follow}
                   unfollowLabel={t.unfollow}
                   errorLabel={t.followFailed}
+                  pendingLabel={t.followPending}
                 />
               </article>
             ))}

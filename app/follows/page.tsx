@@ -1,9 +1,10 @@
+import Link from "next/link";
+import { AppFrame } from "@/components/app-frame";
 import { FollowButton } from "@/components/follow-button";
-import { Nav } from "@/components/nav";
 import { UnfollowAllButton } from "@/components/unfollow-all-button";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
-import { getDictionary } from "@/lib/i18n";
+import { getDictionary, interpolate } from "@/lib/i18n";
 import { BilingualName } from "@/components/bilingual-name";
 import type { FollowKind } from "@/lib/sports/types";
 
@@ -13,22 +14,38 @@ export default async function FollowsPage() {
   const follows = await listFollows(user.id);
 
   return (
-    <div>
-      <Nav t={t} locale={locale} />
-      <main className="mx-auto max-w-4xl px-5 py-10">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+    <AppFrame t={t} locale={locale}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
           <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.following}</h1>
           {follows.length > 0 ? (
-            <UnfollowAllButton
-              label={t.unfollowAll}
-              confirmLabel={t.unfollowAllConfirm}
-              pendingLabel={t.unfollowingAll}
-            />
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {interpolate(t.followingCount, { count: follows.length })}
+            </p>
           ) : null}
         </div>
-        {follows.length === 0 ? (
-          <p className="mt-6 text-[var(--muted)]">{t.emptyFollows}</p>
-        ) : (
+        {follows.length > 0 ? (
+          <UnfollowAllButton
+            label={t.unfollowAll}
+            confirmLabel={t.unfollowAllConfirm}
+            pendingLabel={t.unfollowingAll}
+          />
+        ) : null}
+      </div>
+      {follows.length === 0 ? (
+        <div className="mt-6 space-y-4">
+          <p className="text-[var(--muted)]">{t.emptyFollows}</p>
+          <Link href="/browse" className="btn-primary inline-flex rounded-full px-5 py-2.5 text-sm">
+            {t.landingCta}
+          </Link>
+        </div>
+      ) : (
+        <>
+          <p className="mt-4">
+            <Link href="/preview" className="text-sm text-[var(--accent)] hover:underline">
+              {t.goToPreview}
+            </Link>
+          </p>
           <ul className="mt-8 space-y-3">
             {follows.map((follow) => (
               <li key={follow.id} className="card flex items-center justify-between px-4 py-4">
@@ -52,12 +69,13 @@ export default async function FollowsPage() {
                   followLabel={t.follow}
                   unfollowLabel={t.unfollow}
                   errorLabel={t.followFailed}
+                  pendingLabel={t.followPending}
                 />
               </li>
             ))}
           </ul>
-        )}
-      </main>
-    </div>
+        </>
+      )}
+    </AppFrame>
   );
 }

@@ -65,11 +65,14 @@ export function buildCalendar(events: SportEvent[], reminderMinutes?: string) {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Sporttime//Fixtures//EN",
+    "PRODID:-//Sporttime//Fixtures//ZH",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
+    "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
+    "X-PUBLISHED-TTL:PT1H",
     "X-WR-CALNAME:Sporttime 賽程",
     "X-WR-CALDESC:Sporttime 賽程 / 赛程 / fixtures",
+    "X-WR-TIMEZONE:Asia/Hong_Kong",
   ];
   for (const event of events) lines.push(...vevent(event, reminders));
   lines.push("END:VCALENDAR");

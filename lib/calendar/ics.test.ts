@@ -26,4 +26,7 @@ test("builds a calendar with an upcoming fixture", () => {
   assert.match(ics, /DTSTART:20260901T180000Z/);
   assert.match(ics, /UID:sporttime-123@sporttime/);
   assert.match(ics, /TRIGGER:-PT60M/);
+  assert.match(ics, /REFRESH-INTERVAL;VALUE=DURATION:PT1H/);
+  assert.match(ics, /X-PUBLISHED-TTL:PT1H/);
+  assert.match(ics, /X-WR-TIMEZONE:Asia\/Hong_Kong/);
 });

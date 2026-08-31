@@ -8,23 +8,36 @@ export function SettingsForm({
   remindersLabel,
   reminderHelp,
   resetFeedLabel,
+  savedLabel,
+  saveFailedLabel,
 }: {
   reminderMinutes: string;
   saveLabel: string;
   remindersLabel: string;
   reminderHelp: string;
   resetFeedLabel: string;
+  savedLabel: string;
+  saveFailedLabel: string;
 }) {
   const [value, setValue] = useState(reminderMinutes);
   const [message, setMessage] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
   async function save() {
-    const response = await fetch("/api/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reminderMinutes: value }),
-    });
-    setMessage(response.ok ? "OK" : "Failed");
+    setPending(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reminderMinutes: value }),
+      });
+      setMessage(response.ok ? savedLabel : saveFailedLabel);
+    } catch {
+      setMessage(saveFailedLabel);
+    } finally {
+      setPending(false);
+    }
   }
 
   async function resetFeed() {
@@ -48,11 +61,11 @@ export function SettingsForm({
         />
         <span className="mt-2 block text-sm text-[var(--muted)]">{reminderHelp}</span>
       </label>
-      <button className="btn-primary rounded-full px-5 py-2.5" onClick={save}>
-        {saveLabel}
+      <button type="button" className="btn-primary rounded-full px-5 py-2.5" onClick={save} disabled={pending}>
+        {pending ? "…" : saveLabel}
       </button>
       {message ? <p className="text-sm text-[var(--muted)]">{message}</p> : null}
-      <button className="block text-sm text-[var(--danger)]" onClick={resetFeed}>
+      <button type="button" className="block text-sm text-[var(--danger)]" onClick={resetFeed}>
         {resetFeedLabel}
       </button>
     </div>

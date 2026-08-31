@@ -54,6 +54,14 @@ a {
   transform: translateY(-1px);
 }
 
+.btn-primary:disabled,
+.btn-ghost:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  filter: none;
+}
+
 .btn-ghost {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.03);
