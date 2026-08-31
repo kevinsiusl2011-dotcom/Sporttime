@@ -1,8 +1,10 @@
 import { dbGet, dbRun } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { athleteSearchTerms, eventMentionsAthlete, isRosterSport } from "@/lib/sports/athlete";
+import { normalizeKey } from "@/lib/i18n/names";
 import { findCatalogLeague, leaguesForSport, searchCatalogLeagues } from "@/lib/sports/catalog";
 import { searchPopularAthletes } from "@/lib/sports/popular-athletes";
+import { popularTeamsForLeague } from "@/lib/sports/popular-teams";
 import { currentSeason, nearbySeasons } from "@/lib/sports/season";
 import { asRecords, resolveSearchQuery } from "@/lib/sports/search-query";
 import { isUpcoming, normalizeEvent } from "@/lib/sports/normalize";
@@ -220,21 +222,30 @@ export async function searchAll(query: string): Promise<SearchResults> {
 }
 
 export async function listLeagueTeams(leagueId: string): Promise<CatalogTeam[]> {
-  const data = await requestSafe<{ teams?: Array<Record<string, string>> }>(
-    `lookup_all_teams.php?id=${encodeURIComponent(leagueId)}`,
-    `league-teams:${leagueId}`,
-    { teams: [] },
-    24 * 60 * 60 * 1000,
-  );
-  return asRecords(data.teams).map((item) => ({
-    id: item.idTeam,
-    name: item.strTeam,
-    sport: item.strSport,
-    league: item.strLeague,
-    leagueId: item.idLeague || leagueId,
-    country: item.strCountry,
-    badge: item.strBadge || item.strTeamBadge,
-  }));
+  const catalog = findCatalogLeague(leagueId);
+  const curated = popularTeamsForLeague(leagueId);
+  let remote: CatalogTeam[] = [];
+  if (catalog?.name) {
+    const data = await requestSafe<{ teams?: Array<Record<string, string>> }>(
+      `search_all_teams.php?l=${encodeURIComponent(catalog.name)}`,
+      `league-teams-name:${leagueId}`,
+      { teams: [] },
+      24 * 60 * 60 * 1000,
+    );
+    remote = asRecords(data.teams)
+      .filter((item) => item.idTeam && item.idLeague === leagueId)
+      .filter((item) => !item.strSport || normalizeKey(item.strSport) === normalizeKey(catalog.sport))
+      .map((item) => ({
+        id: item.idTeam,
+        name: item.strTeam,
+        sport: item.strSport || catalog.sport,
+        league: item.strLeague || catalog.name,
+        leagueId: item.idLeague || leagueId,
+        country: item.strCountry,
+        badge: item.strBadge || item.strTeamBadge,
+      }));
+  }
+  return uniqueBy([...curated, ...remote], (team) => team.id);
 }
 
 function toUpcoming(raw: unknown): SportEvent[] {
@@ -425,6 +436,68 @@ async function searchEventsByQuery(query: string): Promise<SportEvent[]> {
   return toUpcoming(data.event);
 }
 
+async function resolveAthleteClub(
+  label: string,
+  sport?: string | null,
+): Promise<{ teamId: string; team?: string; leagueId?: string; playerId?: string } | null> {
+  const data = await requestSafe<{ player?: unknown }>(
+    `searchplayers.php?p=${encodeURIComponent(label)}`,
+    `player-resolve:${normalizeKey(label)}`,
+    { player: [] },
+    24 * 60 * 60 * 1000,
+  );
+  const players = asRecords(data.player);
+  if (players.length === 0) return null;
+
+  const labelKey = normalizeKey(label);
+  const sportKey = normalizeKey(sport ?? "");
+  const lastName = labelKey.split(" ").at(-1) ?? labelKey;
+
+  const ranked = players
+    .map((player, index) => {
+      const nameKey = normalizeKey(player.strPlayer ?? "");
+      const playerSport = normalizeKey(player.strSport ?? "");
+      let score = 0;
+      if (nameKey === labelKey) score += 100;
+      else if (nameKey.includes(labelKey) || labelKey.includes(nameKey)) score += 60;
+      else if (lastName.length >= 4 && nameKey.includes(lastName)) score += 30;
+      if (sportKey && (playerSport === sportKey || playerSport.includes(sportKey) || sportKey.includes(playerSport))) {
+        score += 40;
+      }
+      if (player.idTeam) score += 10;
+      return { player, score, index };
+    })
+    .filter((row) => row.score > 0 && row.player.idTeam)
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+
+  const best = ranked[0]?.player;
+  if (!best?.idTeam) return null;
+  return {
+    teamId: best.idTeam,
+    team: best.strTeam || undefined,
+    leagueId: best.idLeague || undefined,
+    playerId: best.idPlayer || undefined,
+  };
+}
+
+async function persistAthleteClub(sourceId: string, club: {
+  teamId: string;
+  team?: string;
+  leagueId?: string;
+  playerId?: string;
+}) {
+  const payload = JSON.stringify({
+    teamId: club.teamId,
+    team: club.team ?? null,
+    leagueId: club.leagueId ?? null,
+    playerId: club.playerId ?? null,
+  });
+  await dbRun(
+    `UPDATE follows SET extra_json = ? WHERE kind = 'athlete' AND source_id = ? AND (extra_json IS NULL OR extra_json = '' OR extra_json = '{}' OR extra_json NOT LIKE '%teamId%')`,
+    [payload, sourceId],
+  );
+}
+
 async function upcomingForAthlete(follow: {
   source_id: string;
   label: string;
@@ -432,7 +505,24 @@ async function upcomingForAthlete(follow: {
   extra_json: string | null;
 }): Promise<SportEvent[]> {
   const extra = safeJson(follow.extra_json);
-  const teamId = extra.teamId as string | undefined;
+  let teamId = extra.teamId as string | undefined;
+  let teamName = extra.team as string | undefined;
+  let leagueId = extra.leagueId as string | undefined;
+
+  if (!teamId) {
+    const resolved = await resolveAthleteClub(follow.label, follow.sport);
+    if (resolved?.teamId) {
+      teamId = resolved.teamId;
+      teamName = resolved.team ?? teamName;
+      leagueId = resolved.leagueId ?? leagueId;
+      try {
+        await persistAthleteClub(follow.source_id, resolved);
+      } catch (error) {
+        console.error("Failed to persist athlete club", follow.source_id, error);
+      }
+    }
+  }
+
   const terms = athleteSearchTerms(follow.label);
   const namedBatches = await Promise.all(terms.map((term) => searchEventsByQuery(term)));
   const named = uniqueBy(
@@ -445,9 +535,9 @@ async function upcomingForAthlete(follow: {
       ? await upcomingForFollow({
           kind: "team",
           source_id: teamId,
-          label: String(extra.team ?? follow.label),
+          label: String(teamName ?? follow.label),
           sport: follow.sport,
-          extra_json: JSON.stringify({ leagueId: extra.leagueId }),
+          extra_json: JSON.stringify({ leagueId }),
         })
       : [];
     return uniqueBy([...club, ...named], (event) => event.sourceId).sort((a, b) => a.start.localeCompare(b.start));

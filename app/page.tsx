@@ -103,6 +103,9 @@ export default async function HomePage() {
               </li>
             ))}
           </ol>
+          <p className="mt-5 max-w-3xl rounded-2xl border border-[color-mix(in_oklab,var(--accent)_30%,var(--line))] bg-[color-mix(in_oklab,var(--accent)_8%,transparent)] px-5 py-4 text-sm leading-relaxed text-[var(--text)]">
+            {t.autoUpdateNote}
+          </p>
         </section>
 
         <section className="mt-14">
