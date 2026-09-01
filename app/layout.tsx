@@ -15,7 +15,7 @@ const serif = Newsreader({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#090c0b",
+  themeColor: "#f3f6f4",
   width: "device-width",
   initialScale: 1,
 };

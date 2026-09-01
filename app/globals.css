@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #090c0b;
-  --bg-elevated: #111614;
-  --bg-card: #161c19;
-  --line: #25302b;
-  --text: #f3f7f4;
-  --muted: #8b9a93;
-  --accent: #7cffb2;
-  --accent-dim: #1c3d2c;
-  --gold: #f2c14e;
-  --danger: #ff7a7a;
+  --bg: #f3f6f4;
+  --bg-elevated: #ffffff;
+  --bg-card: #ffffff;
+  --line: #d5e0da;
+  --text: #14211c;
+  --muted: #5c6f67;
+  --accent: #0e8f5c;
+  --accent-ink: #ffffff;
+  --accent-dim: #d9f3e6;
+  --gold: #8a6410;
+  --danger: #c43c3c;
 }
 
 html,
@@ -23,8 +24,8 @@ body {
 body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   background-image:
-    radial-gradient(1200px 600px at 10% -10%, rgba(124, 255, 178, 0.08), transparent 50%),
-    radial-gradient(900px 500px at 100% 0%, rgba(242, 193, 78, 0.06), transparent 45%);
+    radial-gradient(1200px 600px at 10% -10%, rgba(14, 143, 92, 0.08), transparent 50%),
+    radial-gradient(900px 500px at 100% 0%, rgba(138, 100, 16, 0.07), transparent 45%);
 }
 
 a {
@@ -32,19 +33,19 @@ a {
 }
 
 ::selection {
-  background: rgba(124, 255, 178, 0.28);
+  background: rgba(14, 143, 92, 0.22);
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent), var(--bg-card);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), transparent), var(--bg-card);
   border: 1px solid var(--line);
   border-radius: 22px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 8px 24px rgba(20, 33, 28, 0.04);
 }
 
 .btn-primary {
   background: var(--accent);
-  color: #082015;
+  color: var(--accent-ink);
   font-weight: 650;
   transition: filter 120ms ease, transform 120ms ease;
 }
@@ -64,12 +65,12 @@ a {
 
 .btn-ghost {
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-elevated);
   transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-elevated));
   border-color: color-mix(in oklab, var(--accent) 28%, var(--line));
   transform: translateY(-1px);
 }
@@ -79,7 +80,7 @@ a {
   align-items: center;
   border-radius: 999px;
   border: 1px solid color-mix(in oklab, var(--accent) 40%, var(--line));
-  background: color-mix(in oklab, var(--accent) 14%, transparent);
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
   padding: 0.2rem 0.65rem;
   font-size: 0.7rem;
   font-weight: 650;

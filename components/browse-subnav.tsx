@@ -37,7 +37,7 @@ export function BrowseSubnav({
           aria-current={current === item.key ? "page" : undefined}
           className={`rounded-full px-4 py-2 text-sm ${
             current === item.key
-              ? "bg-[var(--accent)] font-semibold text-[#082015]"
+              ? "bg-[var(--accent)] font-semibold text-[var(--accent-ink)]"
               : "border border-[var(--line)] bg-[var(--bg-elevated)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
           }`}
         >

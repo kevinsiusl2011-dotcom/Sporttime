@@ -28,8 +28,8 @@ export function NavLinks({ items, variant }: { items: NavItem[]; variant: "deskt
                 className={cn(
                   "min-w-0 flex-1 rounded-xl px-1 py-2 text-center transition",
                   active
-                    ? "bg-white/10 font-semibold text-[var(--accent)]"
-                    : "hover:bg-white/5 hover:text-[var(--text)]",
+                    ? "bg-[color-mix(in_oklab,var(--accent)_14%,transparent)] font-semibold text-[var(--accent)]"
+                    : "hover:bg-[color-mix(in_oklab,var(--text)_6%,transparent)] hover:text-[var(--text)]",
                 )}
               >
                 {item.label}
@@ -53,8 +53,8 @@ export function NavLinks({ items, variant }: { items: NavItem[]; variant: "deskt
             className={cn(
               "rounded-full px-3 py-1.5 transition",
               active
-                ? "bg-white/10 font-medium text-[var(--text)]"
-                : "hover:bg-white/5 hover:text-[var(--text)]",
+                ? "bg-[color-mix(in_oklab,var(--accent)_14%,transparent)] font-medium text-[var(--text)]"
+                : "hover:bg-[color-mix(in_oklab,var(--text)_6%,transparent)] hover:text-[var(--text)]",
             )}
           >
             {item.label}

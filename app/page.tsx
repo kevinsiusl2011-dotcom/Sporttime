@@ -33,8 +33,8 @@ export default async function HomePage() {
     <div>
       <Nav t={t} locale={locale} />
       <main className="mx-auto max-w-6xl px-5 py-12 md:py-16">
-        <section className="relative overflow-hidden rounded-[28px] border border-[var(--line)] bg-[linear-gradient(160deg,rgba(124,255,178,0.08),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent),var(--bg-card)] px-6 py-10 md:px-12 md:py-14">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(242,193,78,0.16),transparent_68%)]" />
+        <section className="relative overflow-hidden rounded-[28px] border border-[var(--line)] bg-[linear-gradient(160deg,rgba(14,143,92,0.10),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.72),transparent),var(--bg-card)] px-6 py-10 md:px-12 md:py-14">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(138,100,16,0.14),transparent_68%)]" />
           <div className="relative max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
               <span className="badge-accent">{t.freeToolBadge}</span>
