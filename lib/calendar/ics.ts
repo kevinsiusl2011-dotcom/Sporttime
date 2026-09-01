@@ -38,8 +38,10 @@ function vevent(event: SportEvent, reminders: number[]) {
     league: event.league,
     title: event.title,
     location: event.location,
-    description: event.description,
     timeConfirmed: event.timeConfirmed,
+    start: event.start,
+    home: event.home,
+    away: event.away,
   });
   const lines = [
     "BEGIN:VEVENT",
@@ -51,6 +53,7 @@ function vevent(event: SportEvent, reminders: number[]) {
     event.allDay || !event.timeConfirmed ? `DTEND;VALUE=DATE:${dayStamp(event.end)}` : `DTEND:${utcStamp(event.end)}`,
     `SUMMARY:${escapeText(summary)}`,
     `DESCRIPTION:${escapeText(description)}`,
+    `STATUS:${event.timeConfirmed ? "CONFIRMED" : "TENTATIVE"}`,
   ];
   if (event.location) lines.push(`LOCATION:${escapeText(displayName(event.location, "zh-Hant"))}`);
   for (const minutes of reminders.slice(0, 5)) {
@@ -71,7 +74,7 @@ export function buildCalendar(events: SportEvent[], reminderMinutes?: string) {
     "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
     "X-PUBLISHED-TTL:PT1H",
     "X-WR-CALNAME:Sporttime 賽程",
-    "X-WR-CALDESC:Sporttime 賽程 / 赛程 / fixtures",
+    "X-WR-CALDESC:開波時間寫入你嘅日曆，方便排程。唔提供即時比分。",
     "X-WR-TIMEZONE:Asia/Hong_Kong",
   ];
   for (const event of events) lines.push(...vevent(event, reminders));

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { displayName } from "../i18n/localize.ts";
 import { popularTeamGroups, popularTeamsForSport } from "./popular-teams.ts";
 
 test("lists followable clubs and constructors", () => {
@@ -16,4 +17,11 @@ test("lists followable clubs and constructors", () => {
   const motorsport = popularTeamGroups("Motorsport");
   assert.ok(motorsport.some((group) => group.league === "Formula 1" && group.teams.length >= 10));
   assert.equal(popularTeamsForSport("Snooker").length, 0);
+});
+
+test("gives every catalogue soccer club a Chinese name", () => {
+  const missing = popularTeamsForSport("Soccer")
+    .filter((team) => displayName(team.name, "zh-Hant") === team.name)
+    .map((team) => team.name);
+  assert.deepEqual(missing, []);
 });

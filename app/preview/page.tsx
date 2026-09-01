@@ -17,7 +17,7 @@ export default async function PreviewPage() {
   return (
     <AppFrame t={t} locale={locale}>
       <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.preview}</h1>
-      <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.autoUpdateNote}</p>
+      <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.previewHelp}</p>
       <div className="mt-6">
         <CalendarSubscribe feedUrl={feedUrl} t={t} />
       </div>
@@ -62,6 +62,7 @@ async function UpcomingEvents({
       empty={empty}
       emptyHref={emptyHref}
       emptyCta={emptyCta}
+      showPlanner
     />
   );
 }

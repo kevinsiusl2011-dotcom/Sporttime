@@ -16,6 +16,8 @@ test("builds a calendar with an upcoming fixture", () => {
     description: "Premier League",
     sport: "Soccer",
     league: "English Premier League",
+    home: "Arsenal",
+    away: "Chelsea",
   };
   const ics = buildCalendar([event], "60");
   assert.match(ics, /BEGIN:VCALENDAR/);
@@ -26,6 +28,10 @@ test("builds a calendar with an upcoming fixture", () => {
   assert.match(ics, /DTSTART:20260901T180000Z/);
   assert.match(ics, /UID:sporttime-123@sporttime/);
   assert.match(ics, /TRIGGER:-PT60M/);
+  assert.match(ics, /STATUS:CONFIRMED/);
+  assert.match(ics.replace(/\r\n /g, ""), /開波：/);
+  assert.match(ics.replace(/\r\n /g, ""), /主隊：阿仙奴/);
+  assert.match(ics.replace(/\r\n /g, ""), /用嚟排程/);
   assert.match(ics, /REFRESH-INTERVAL;VALUE=DURATION:PT1H/);
   assert.match(ics, /X-PUBLISHED-TTL:PT1H/);
   assert.match(ics, /X-WR-TIMEZONE:Asia\/Hong_Kong/);

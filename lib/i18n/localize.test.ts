@@ -62,20 +62,37 @@ test("builds a Chinese calendar summary", () => {
   assert.equal(summary, "英超：曼城對利物浦");
 });
 
-test("writes calendar details as one paragraph", () => {
+test("writes calendar details as a planning note", () => {
   const description = eventDescription({
     league: "English Premier League",
     title: "Arsenal vs Chelsea",
     location: "Emirates Stadium",
     timeConfirmed: true,
+    start: "2026-09-01T18:00:00.000Z",
+    home: "Arsenal",
+    away: "Chelsea",
   });
-  assert.match(description, /^英超：阿仙奴對車路士。/);
+  assert.match(description, /^英超：阿仙奴對車路士/);
   assert.match(description, /English Premier League: Arsenal vs Chelsea/);
+  assert.match(description, /開波：/);
+  assert.match(description, /香港時間/);
+  assert.match(description, /主隊：阿仙奴 \/ Arsenal/);
+  assert.match(description, /客隊：車路士 \/ Chelsea/);
+  assert.match(description, /用嚟排程/);
   assert.doesNotMatch(description, /簡體是/);
-  assert.equal(description.includes("\n"), false);
+  assert.equal(description.includes("\n"), true);
 });
 
 test("shows Chinese names for Messi and Pogacar", () => {
   assert.equal(displayName("Lionel Messi", "zh-Hant"), "美斯");
   assert.equal(displayName("Tadej Pogačar", "zh-Hant"), "波加查");
+});
+
+test("translates Championship and remaining Premier League clubs", () => {
+  assert.equal(displayName("Hull City", "zh-Hant"), "侯城");
+  assert.equal(displayName("Coventry City", "zh-Hant"), "高雲地利");
+  assert.equal(displayName("Burnley", "zh-Hant"), "般尼");
+  assert.equal(displayName("Sunderland", "zh-Hant"), "新特蘭");
+  assert.equal(eventSummary("English Premier League", "Manchester City vs Coventry City"), "英超：曼城對高雲地利");
+  assert.equal(eventSummary("English Premier League", "Chelsea vs Hull City"), "英超：車路士對侯城");
 });

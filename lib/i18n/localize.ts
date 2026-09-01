@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n/dictionaries";
 import { lookupName } from "@/lib/i18n/names";
+import { formatDateTime } from "@/lib/utils";
 
 export type LocalizedText = {
   hant: string;
@@ -109,22 +110,38 @@ export function eventDescription(input: {
   league: string;
   title: string;
   location?: string;
-  description?: string;
   timeConfirmed: boolean;
+  start?: string;
+  home?: string;
+  away?: string;
 }): string {
   const headline = eventHeadline(input.league, input.title);
-  const venue = input.location ? localizeText(input.location) : null;
-  let paragraph = `${headline.hant}。`;
-  if (headline.en !== headline.hant) paragraph += `${headline.en}. `;
-  if (venue) {
-    paragraph += venue.hant === venue.en ? `地點：${venue.en}。` : `比賽在${venue.hant}舉行。`;
+  const lines: string[] = [headline.hant];
+  if (headline.en !== headline.hant) lines.push(headline.en);
+  lines.push("");
+
+  if (input.start && input.timeConfirmed) {
+    lines.push(`開波：${formatDateTime(input.start, "zh-Hant")}`);
+    lines.push(`Kickoff: ${formatDateTime(input.start, "en")}`);
+  } else {
+    lines.push("開賽時間尚未確定。Kickoff time is not confirmed.");
   }
-  if (!input.timeConfirmed) {
-    paragraph += "開賽時間尚未確定。";
+
+  if (input.home) {
+    const home = localizeText(input.home);
+    lines.push(home.hant === home.en ? `主隊：${home.en}` : `主隊：${home.hant} / ${home.en}`);
   }
-  if (input.description) {
-    paragraph += input.description.trim().endsWith("。") ? input.description : `${input.description}。`;
+  if (input.away) {
+    const away = localizeText(input.away);
+    lines.push(away.hant === away.en ? `客隊：${away.en}` : `客隊：${away.hant} / ${away.en}`);
   }
-  paragraph += "賽程來自 Sporttime，時間或會改期。";
-  return paragraph;
+  if (input.location) {
+    const venue = localizeText(input.location);
+    lines.push(venue.hant === venue.en ? `地點：${venue.en}` : `地點：${venue.hant} / ${venue.en}`);
+  }
+
+  lines.push("");
+  lines.push("用嚟排程，唔提供即時比分。時間或會改期。");
+  lines.push("For planning your week — not live scores. Times may change.");
+  return lines.join("\n");
 }
