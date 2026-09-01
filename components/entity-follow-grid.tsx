@@ -1,4 +1,4 @@
-import { entityIsFollowed } from "@/lib/follows";
+import { entityIsFollowed } from "@/lib/follow-status";
 import { BilingualName } from "@/components/bilingual-name";
 import { FollowButton } from "@/components/follow-button";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";

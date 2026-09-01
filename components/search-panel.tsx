@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { FollowButton } from "@/components/follow-button";
-import { entityIsFollowed } from "@/lib/follows";
+import { entityIsFollowed } from "@/lib/follow-status";
 import type { SearchResults } from "@/lib/sports/types";
 import { BilingualName } from "@/components/bilingual-name";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
