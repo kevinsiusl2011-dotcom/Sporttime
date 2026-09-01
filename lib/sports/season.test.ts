@@ -19,6 +19,15 @@ describe("currentSeason", () => {
     assert.equal(currentSeason("Golf", new Date("2026-08-29")), "2026");
     assert.equal(currentSeason("Esports", new Date("2026-08-29")), "2026");
   });
+
+  it("uses calendar year for NFL", () => {
+    assert.equal(currentSeason("American Football", new Date("2026-09-01")), "2026");
+  });
+
+  it("switches soccer season on the Hong Kong calendar", () => {
+    assert.equal(currentSeason("Soccer", new Date("2026-06-30T16:30:00.000Z")), "2026-2027");
+    assert.equal(currentSeason("Soccer", new Date("2026-06-30T15:30:00.000Z")), "2025-2026");
+  });
 });
 
 describe("nearbySeasons", () => {

@@ -4,7 +4,7 @@ import { AppFrame } from "@/components/app-frame";
 import { EventList } from "@/components/event-list";
 import { FollowButton } from "@/components/follow-button";
 import { BilingualName } from "@/components/bilingual-name";
-import { listFollows } from "@/lib/follows";
+import { entityIsFollowed, followedSet, listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary, type Dictionary, type Locale } from "@/lib/i18n";
 import { findCatalogLeague } from "@/lib/sports/catalog";
@@ -19,7 +19,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
 
   const { t, locale } = await getDictionary();
   const follows = await listFollows(user.id);
-  const following = new Set(follows.map((follow) => `${follow.kind}:${follow.source_id}`));
+  const following = followedSet(follows);
   const followingIds = [...following];
 
   return (
@@ -107,7 +107,7 @@ async function LeagueTeams({
             label={team.name}
             sport={team.sport}
             extra={{ leagueId: league.id, league: league.name }}
-            following={following.has(`team:${team.id}`)}
+            following={entityIsFollowed(following, "team", team.id, team.name)}
             followLabel={t.follow}
             unfollowLabel={t.unfollow}
             errorLabel={t.followFailed}

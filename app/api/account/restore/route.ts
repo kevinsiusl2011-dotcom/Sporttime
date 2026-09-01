@@ -1,6 +1,5 @@
 import { parseFeedToken } from "@/lib/account/token";
-import { mergeUserData } from "@/lib/account/merge";
-import { dbGet, type UserRow } from "@/lib/db";
+import { findUserByFeedToken, mergeUserData } from "@/lib/account/merge";
 import { getSession, createSession } from "@/lib/session";
 import { rebuildUserFeed } from "@/lib/sync/engine";
 
@@ -11,7 +10,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "invalid_token" }, { status: 400 });
   }
 
-  const target = await dbGet<UserRow>("SELECT * FROM users WHERE feed_token = ?", [token]);
+  const target = await findUserByFeedToken(token);
   if (!target) return Response.json({ error: "not_found" }, { status: 404 });
 
   const current = await getSession();

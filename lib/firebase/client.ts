@@ -94,7 +94,7 @@ export function explainSignInError(err: unknown, locale: Locale = "zh-Hant"): st
   const zh: Record<string, string> = {
     "auth/unauthorized-domain": "呢個網址未獲授權。請用 https://sporttime-delta.vercel.app 再開一次。",
     "auth/popup-blocked": "瀏覽器擋住彈窗。而家會改用整頁跳去 Google，請再撳一次。",
-    "auth/popup-closed-by-user": "登入視窗被關閉。請再試一次，並批准日曆權限。",
+    "auth/popup-closed-by-user": "登入視窗被關閉。請再試一次。",
     "auth/cancelled-popup-request": "登入已取消，請再撳一次。",
     "auth/internal-error": "Google 登入中斷。請關閉擋廣告外掛，用 Chrome 開 https://sporttime-delta.vercel.app 再試。",
     "auth/operation-not-allowed": "呢個專案未開啟 Google 登入。",
@@ -105,7 +105,7 @@ export function explainSignInError(err: unknown, locale: Locale = "zh-Hant"): st
     "auth/invalid-oauth-client-id": "Google 登入用戶端未授權呢個網站。",
     "auth/invalid-credential": "Google 憑證無效，請再登入一次。",
     "auth/web-storage-unsupported": "瀏覽器封鎖咗儲存空間。請關閉無痕模式或允許 cookie。",
-    "auth/user-cancelled": "你取消咗授權。要寫入日曆需要批准日曆權限。",
+    "auth/user-cancelled": "你取消咗授權。請再試一次。",
     "auth/missing-or-invalid-nonce": "登入階段已過期，請再撳一次。",
     "auth/redirect-cancelled-by-user": "登入被取消，請再撳一次。",
     "auth/account-exists-with-different-credential": "呢個電郵已用其他方式註冊。",
@@ -113,7 +113,7 @@ export function explainSignInError(err: unknown, locale: Locale = "zh-Hant"): st
   const en: Record<string, string> = {
     "auth/unauthorized-domain": "This address is not authorized. Open https://sporttime-delta.vercel.app and try again.",
     "auth/popup-blocked": "The browser blocked the Google sign-in window. Allow pop-ups and try again.",
-    "auth/popup-closed-by-user": "The sign-in window was closed. Try again and approve calendar access.",
+    "auth/popup-closed-by-user": "The sign-in window was closed. Try again.",
     "auth/cancelled-popup-request": "Sign-in was cancelled. Tap the button again.",
     "auth/internal-error": "Google sign-in was interrupted. Disable ad blockers and try Chrome at https://sporttime-delta.vercel.app",
     "auth/operation-not-allowed": "Google sign-in is disabled on this Firebase project.",
@@ -124,7 +124,7 @@ export function explainSignInError(err: unknown, locale: Locale = "zh-Hant"): st
     "auth/invalid-oauth-client-id": "This site is not authorized on the Google OAuth client.",
     "auth/invalid-credential": "The Google credential was rejected. Please sign in again.",
     "auth/web-storage-unsupported": "The browser blocked storage. Disable private mode or allow cookies.",
-    "auth/user-cancelled": "Permission was denied. Calendar access is required to write fixtures.",
+    "auth/user-cancelled": "Permission was denied. Try signing in again.",
     "auth/missing-or-invalid-nonce": "The sign-in session expired. Tap the button again.",
     "auth/redirect-cancelled-by-user": "Sign-in was cancelled. Tap the button again.",
     "auth/account-exists-with-different-credential": "This email is already registered another way.",
@@ -148,7 +148,7 @@ export async function startGoogleSignIn() {
     throw new Error("Firebase is not configured");
   }
   sessionStorage.setItem(PENDING_KEY, "1");
-  await signInWithRedirect(getFirebaseAuth(), googleProvider(true));
+  await signInWithRedirect(getFirebaseAuth(), googleProvider(false));
 }
 
 let redirectAttempt: Promise<GoogleSignInPayload | null> | undefined;

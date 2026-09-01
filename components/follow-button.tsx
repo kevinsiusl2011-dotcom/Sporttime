@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FollowKind } from "@/lib/sports/types";
 
 export function FollowButton({
@@ -32,6 +32,10 @@ export function FollowButton({
   const [on, setOn] = useState(following);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setOn(following);
+  }, [following]);
+
   async function toggle() {
     setPending(true);
     setError(null);
@@ -43,6 +47,10 @@ export function FollowButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ kind, sourceId, label, sport, extra }),
       });
+      if (response.status === 401) {
+        window.location.reload();
+        return;
+      }
       if (!response.ok) {
         setOn(on);
         setError(errorLabel);

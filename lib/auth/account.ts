@@ -27,7 +27,7 @@ export async function completeGoogleLogin(input: {
     [userId, input.email, input.name ?? null, input.image ?? null],
   );
 
-  if (input.accessToken || input.refreshToken) {
+  if (input.refreshToken) {
     const current = await dbGet<{ refresh_token_enc: string }>(
       "SELECT refresh_token_enc FROM google_accounts WHERE user_id = ?",
       [userId],
@@ -56,7 +56,7 @@ export async function completeGoogleLogin(input: {
   }
 
   if (input.guestUserId) {
-    await mergeUserData(input.guestUserId, userId);
+    await mergeUserData(input.guestUserId, userId, "from");
   }
 
   await createSession({

@@ -1,6 +1,6 @@
 import { CalendarSubscribe } from "@/components/calendar-subscribe";
 import { RestoreFeedForm } from "@/components/restore-feed";
-import { SignInButton } from "@/components/auth-buttons";
+import { SignInButton, SignOutButton } from "@/components/auth-buttons";
 import { AppFrame } from "@/components/app-frame";
 import { SettingsForm } from "@/app/settings/settings-form";
 import { ensureUserRecord } from "@/lib/guest";
@@ -26,7 +26,10 @@ export default async function SettingsPage() {
           <SignInButton label={t.signIn} pendingLabel={t.signingIn} locale={locale} />
         </div>
       ) : (
-        <p className="mt-4 text-sm text-[var(--muted)]">{user.email}</p>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-[var(--muted)]">{user.email}</p>
+          <SignOutButton label={t.signOut} />
+        </div>
       )}
       <div className="mt-8">
         <CalendarSubscribe feedUrl={feedUrl} t={t} />

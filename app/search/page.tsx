@@ -1,13 +1,13 @@
 import { AppFrame } from "@/components/app-frame";
 import { SearchPanel } from "@/components/search-panel";
-import { listFollows } from "@/lib/follows";
+import { followedSet, listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
 
 export default async function SearchPage() {
   const user = await ensureUserRecord();
   const { t, locale } = await getDictionary();
-  const followingIds = (await listFollows(user.id)).map((follow) => `${follow.kind}:${follow.source_id}`);
+  const followingIds = [...followedSet(await listFollows(user.id))];
 
   return (
     <AppFrame t={t} locale={locale}>

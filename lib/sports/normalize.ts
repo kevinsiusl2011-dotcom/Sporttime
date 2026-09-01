@@ -1,4 +1,5 @@
 import { hashPayload } from "@/lib/crypto";
+import { eventInvolvesClub } from "@/lib/sports/club-name";
 import type { SportEvent } from "@/lib/sports/types";
 
 type RawEvent = {
@@ -42,28 +43,49 @@ export function parseSportsTimestamp(raw: string): Date {
   return new Date(`${raw}Z`);
 }
 
+const HOUR = 60 * 60 * 1000;
+
+export function eventDurationMs(sport = "Sport"): number {
+  const key = sport.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  if (key === "american football" || key === "baseball") return 3.5 * HOUR;
+  if (key === "cricket") return 8 * HOUR;
+  if (key === "golf" || key === "cycling") return 6 * HOUR;
+  if (key === "snooker" || key === "esports" || key === "e sports") return 4 * HOUR;
+  if (
+    key === "ice hockey" ||
+    key === "tennis" ||
+    key === "motorsport" ||
+    key === "fighting" ||
+    key === "mma" ||
+    key === "boxing"
+  ) {
+    return 3 * HOUR;
+  }
+  return 2.5 * HOUR;
+}
+
 export function normalizeEvent(raw: RawEvent): SportEvent | null {
   const sourceId = raw.idEvent;
   if (!sourceId) return null;
 
-  const date = raw.dateEventLocal || raw.dateEvent;
+  const date = raw.dateEvent || raw.dateEventLocal;
   if (!date) return null;
 
-  const localTime = padTime(raw.strTimeLocal) ?? padTime(raw.strTime);
-  const timeConfirmed = Boolean(localTime || raw.strTimestamp);
+  const utcTime = padTime(raw.strTime);
+  const timeConfirmed = Boolean(raw.strTimestamp || utcTime);
   let start: Date;
 
   if (raw.strTimestamp) {
     start = parseSportsTimestamp(raw.strTimestamp);
-  } else if (localTime) {
-    start = new Date(`${date}T${localTime}Z`);
+  } else if (utcTime && raw.dateEvent) {
+    start = new Date(`${raw.dateEvent}T${utcTime}Z`);
   } else {
     start = new Date(`${date}T12:00:00Z`);
   }
 
   if (Number.isNaN(start.getTime())) return null;
 
-  const end = new Date(start.getTime() + 2.5 * 60 * 60 * 1000);
+  const end = new Date(start.getTime() + eventDurationMs(raw.strSport || "Sport"));
   const location = [raw.strVenue, raw.strCity, raw.strCountry].filter(Boolean).join(", ");
   const title = raw.strEvent || raw.strFilename || "Upcoming event";
   const details = [
@@ -129,12 +151,7 @@ export function matchesFollow(
     return event.leagueId === follow.source_id;
   }
   if (follow.kind === "team") {
-    const name = follow.label.toLowerCase();
-    return (
-      event.home?.toLowerCase() === name ||
-      event.away?.toLowerCase() === name ||
-      event.title.toLowerCase().includes(name)
-    );
+    return eventInvolvesClub(event, follow.label);
   }
   const name = follow.label.toLowerCase();
   return event.title.toLowerCase().includes(name) || event.description.toLowerCase().includes(name);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { isUpcoming, matchesFollow, normalizeEvent, parseSportsTimestamp } from "./normalize.ts";
+import { isUpcoming, matchesFollow, normalizeEvent, parseSportsTimestamp, eventDurationMs } from "./normalize.ts";
 
 describe("normalizeEvent", () => {
   it("builds a timed event from timestamp", () => {
@@ -31,6 +31,31 @@ describe("normalizeEvent", () => {
     });
     assert.equal(event?.start, "2026-08-30T13:00:00.000Z");
     assert.equal(parseSportsTimestamp("2026-08-30T13:00:00").toISOString(), "2026-08-30T13:00:00.000Z");
+  });
+
+  it("uses SportsDB UTC date and time when timestamp is missing", () => {
+    const event = normalizeEvent({
+      idEvent: "nfl",
+      strEvent: "Seattle Seahawks vs New England Patriots",
+      dateEvent: "2026-09-10",
+      dateEventLocal: "2026-09-09",
+      strTime: "00:20:00",
+      strTimeLocal: "17:20:00",
+    });
+    assert.equal(event?.timeConfirmed, true);
+    assert.equal(event?.start, "2026-09-10T00:20:00.000Z");
+  });
+
+  it("does not treat local-only kickoff as UTC", () => {
+    const event = normalizeEvent({
+      idEvent: "local-only",
+      strEvent: "Local fixture",
+      dateEventLocal: "2026-09-09",
+      strTimeLocal: "17:20:00",
+    });
+    assert.equal(event?.timeConfirmed, false);
+    assert.equal(event?.allDay, true);
+    assert.equal(event?.start, "2026-09-09T12:00:00.000Z");
   });
 
   it("marks missing times as TBA all-day", () => {
@@ -73,6 +98,22 @@ describe("matchesFollow", () => {
       true,
     );
   });
+
+  it("matches clubs by alias", () => {
+    const psg = normalizeEvent({
+      idEvent: "psg",
+      strEvent: "Paris SG vs Barcelona",
+      strHomeTeam: "Paris SG",
+      strAwayTeam: "Barcelona",
+      idLeague: "4335",
+      dateEvent: "2026-11-01",
+      strTimestamp: "2026-11-01T20:00:00Z",
+    });
+    assert.equal(
+      matchesFollow(psg!, { kind: "team", source_id: "1", label: "Paris Saint-Germain" }),
+      true,
+    );
+  });
 });
 
 describe("isUpcoming", () => {
@@ -84,5 +125,13 @@ describe("isUpcoming", () => {
       strTimestamp: "2099-01-01T12:00:00Z",
     });
     assert.equal(isUpcoming(event!), true);
+  });
+});
+
+describe("eventDurationMs", () => {
+  it("uses longer blocks for cricket and american football", () => {
+    assert.equal(eventDurationMs("Soccer"), 2.5 * 60 * 60 * 1000);
+    assert.equal(eventDurationMs("Cricket"), 8 * 60 * 60 * 1000);
+    assert.equal(eventDurationMs("American Football"), 3.5 * 60 * 60 * 1000);
   });
 });

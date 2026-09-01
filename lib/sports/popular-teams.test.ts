@@ -10,7 +10,12 @@ test("lists followable clubs and constructors", () => {
   assert.ok(soccer.some((team) => team.name === "Liverpool"));
   assert.ok(soccer.filter((team) => team.leagueId === "4328").length >= 20);
   assert.equal(popularTeamsForSport("Basketball").filter((team) => team.leagueId === "4387").length, 30);
-  assert.equal(popularTeamsForSport("American Football").length, 32);
+  const nfl = popularTeamsForSport("American Football");
+  assert.equal(nfl.length, 32);
+  assert.deepEqual(
+    nfl.filter((team) => !/^\d+$/.test(team.id)).map((team) => team.name),
+    [],
+  );
   assert.equal(popularTeamsForSport("Baseball").filter((team) => team.leagueId === "4424").length, 30);
   assert.equal(popularTeamsForSport("Ice Hockey").length, 32);
   assert.equal(popularTeamsForSport("Australian Football").length, 18);

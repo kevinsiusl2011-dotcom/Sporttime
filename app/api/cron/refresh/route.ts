@@ -2,9 +2,9 @@ import { refreshAllFeeds } from "@/lib/sync/engine";
 
 function authorized(request: Request) {
   const expected = process.env.CRON_SECRET;
-  const provided = request.headers.get("authorization")?.replace("Bearer ", "");
-  const vercelCron = request.headers.get("x-vercel-cron");
-  return Boolean((expected && provided === expected) || vercelCron === "1");
+  if (!expected || expected === "change-me") return false;
+  const provided = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  return provided === expected;
 }
 
 async function run(request: Request) {

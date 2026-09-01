@@ -2,6 +2,7 @@ import { google, type calendar_v3 } from "googleapis";
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { dbGet, dbRun, type GoogleAccountRow } from "@/lib/db";
 import type { SportEvent } from "@/lib/sports/types";
+import { addCalendarDays, DEFAULT_TIME_ZONE } from "@/lib/utils";
 
 const CALENDAR_NAME = "Sporttime";
 const SOURCE_KEY = "sporttimeSourceId";
@@ -61,7 +62,7 @@ export async function ensureSporttimeCalendar(userId: string): Promise<string> {
       requestBody: {
         summary: CALENDAR_NAME,
         description: "Upcoming sports fixtures synced by your self-hosted Sporttime instance.",
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeZone: DEFAULT_TIME_ZONE,
       },
     });
     const id = created.data.id;
@@ -103,7 +104,7 @@ export function toCalendarEvent(
 
   if (event.allDay || !event.timeConfirmed) {
     const day = event.start.slice(0, 10);
-    return { ...base, start: { date: day }, end: { date: day } };
+    return { ...base, start: { date: day }, end: { date: addCalendarDays(day, 1) } };
   }
 
   return {

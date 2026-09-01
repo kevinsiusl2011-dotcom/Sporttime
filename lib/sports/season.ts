@@ -1,3 +1,5 @@
+import { DEFAULT_TIME_ZONE } from "@/lib/utils";
+
 const CALENDAR_YEAR_SPORTS = new Set([
   "Motorsport",
   "Tennis",
@@ -13,6 +15,7 @@ const CALENDAR_YEAR_SPORTS = new Set([
   "Darts",
   "Snooker",
   "Australian Football",
+  "American Football",
   "Field Hockey",
   "Badminton",
   "Table Tennis",
@@ -25,9 +28,20 @@ const CALENDAR_YEAR_SPORTS = new Set([
   "Gaelic",
 ]);
 
+function hongKongYearMonth(now: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: DEFAULT_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(now);
+  return {
+    year: Number(parts.find((part) => part.type === "year")?.value),
+    month: Number(parts.find((part) => part.type === "month")?.value),
+  };
+}
+
 export function currentSeason(sport = "Soccer", now = new Date()): string {
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  const { year, month } = hongKongYearMonth(now);
   if (CALENDAR_YEAR_SPORTS.has(sport)) return String(year);
   if (month >= 7) return `${year}-${year + 1}`;
   return `${year - 1}-${year}`;

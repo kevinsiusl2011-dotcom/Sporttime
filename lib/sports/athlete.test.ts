@@ -15,6 +15,10 @@ test("uses last name when it is long enough", () => {
   assert.deepEqual(athleteSearchTerms("Son"), ["Son"]);
 });
 
+test("does not search generic suffixes like Junior", () => {
+  assert.deepEqual(athleteSearchTerms("Vinicius Junior"), ["Vinicius Junior"]);
+});
+
 test("matches rider names inside an event title", () => {
   const event = {
     title: "Tour de France Stage 14",
@@ -23,4 +27,15 @@ test("matches rider names inside an event title", () => {
   } as SportEvent;
   assert.equal(eventMentionsAthlete(event, "Tadej Pogačar"), true);
   assert.equal(eventMentionsAthlete(event, "Lionel Messi"), false);
+});
+
+test("does not treat Junior as a unique athlete match", () => {
+  const event = {
+    title: "Gremio vs Junior Barranquilla",
+    home: "Gremio",
+    away: "Junior Barranquilla",
+    description: "",
+    league: "Copa Libertadores",
+  } as SportEvent;
+  assert.equal(eventMentionsAthlete(event, "Vinicius Junior"), false);
 });

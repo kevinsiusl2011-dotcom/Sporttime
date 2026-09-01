@@ -1,6 +1,7 @@
 import { dbGet, dbRun } from "@/lib/db";
 import { getEnv } from "@/lib/env";
-import { athleteSearchTerms, eventMentionsAthlete, isRosterSport } from "@/lib/sports/athlete";
+import { athleteSearchTerms, eventMentionsAthlete, isRosterSport, isWeakAthleteToken } from "@/lib/sports/athlete";
+import { eventInvolvesClub } from "@/lib/sports/club-name";
 import { normalizeKey } from "@/lib/i18n/names";
 import { findCatalogLeague, leaguesForSport, searchCatalogLeagues } from "@/lib/sports/catalog";
 import { searchPopularAthletes } from "@/lib/sports/popular-athletes";
@@ -392,11 +393,7 @@ export async function upcomingForFollow(follow: {
       nextTeamEvents(follow.source_id),
       leagueId
         ? seasonEvents(leagueId, follow.sport ?? "Soccer").then((events) =>
-            events.filter((event) =>
-              [event.home, event.away, event.title].some((value) =>
-                value?.toLowerCase().includes(follow.label.toLowerCase()),
-              ),
-            ),
+            events.filter((event) => eventInvolvesClub(event, follow.label)),
           )
         : Promise.resolve([] as SportEvent[]),
     ]);
@@ -408,7 +405,7 @@ export async function upcomingForFollow(follow: {
     const team = await lookupTeam(follow.source_id);
     if (team?.leagueId) {
       return (await seasonEvents(team.leagueId, team.sport)).filter((event) =>
-        [event.home, event.away].some((value) => value?.toLowerCase() === team.name.toLowerCase()),
+        eventInvolvesClub(event, team.name),
       );
     }
   }
@@ -460,24 +457,29 @@ async function resolveAthleteClub(
       let score = 0;
       if (nameKey === labelKey) score += 100;
       else if (nameKey.includes(labelKey) || labelKey.includes(nameKey)) score += 60;
-      else if (lastName.length >= 4 && nameKey.includes(lastName)) score += 30;
+      else if (lastName.length >= 4 && !isWeakAthleteToken(lastName) && nameKey.includes(lastName)) score += 30;
       if (sportKey && (playerSport === sportKey || playerSport.includes(sportKey) || sportKey.includes(playerSport))) {
         score += 40;
       }
       if (player.idTeam) score += 10;
       return { player, score, index };
     })
-    .filter((row) => row.score > 0 && row.player.idTeam)
+    .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score || a.index - b.index);
 
-  const best = ranked[0]?.player;
-  if (!best?.idTeam) return null;
+  const withTeam = ranked.find((row) => row.player.idTeam)?.player ?? ranked[0]?.player;
+  if (!withTeam) return null;
   return {
-    teamId: best.idTeam,
-    team: best.strTeam || undefined,
-    leagueId: best.idLeague || undefined,
-    playerId: best.idPlayer || undefined,
+    teamId: withTeam.idTeam || "",
+    team: withTeam.strTeam || undefined,
+    leagueId: withTeam.idLeague || undefined,
+    playerId: withTeam.idPlayer || undefined,
   };
+}
+
+export async function resolveAthleteId(label: string, sport?: string | null): Promise<string | null> {
+  const resolved = await resolveAthleteClub(label, sport);
+  return resolved?.playerId || null;
 }
 
 const ATHLETE_CLUB_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;

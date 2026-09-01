@@ -1,20 +1,32 @@
 import { parseReminders } from "@/lib/env";
 import { displayName, eventDescription, eventSummary } from "@/lib/i18n/localize";
 import type { SportEvent } from "@/lib/sports/types";
+import { addCalendarDays } from "@/lib/utils";
 
 function escapeText(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
 }
 
+/** RFC 5545 folds at 75 octets, not JS characters — CJK summaries are 3 bytes each. */
 function fold(line: string) {
-  if (line.length <= 74) return line;
-  let output = line.slice(0, 74);
-  let rest = line.slice(74);
-  while (rest.length) {
-    output += `\r\n ${rest.slice(0, 73)}`;
-    rest = rest.slice(73);
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const bytes = encoder.encode(line);
+  if (bytes.length <= 75) return line;
+
+  const chunks: string[] = [];
+  let offset = 0;
+  let limit = 75;
+  while (offset < bytes.length) {
+    let end = Math.min(offset + limit, bytes.length);
+    while (end > offset && end < bytes.length && (bytes[end]! & 0b1100_0000) === 0b1000_0000) {
+      end -= 1;
+    }
+    chunks.push(decoder.decode(bytes.subarray(offset, end)));
+    offset = end;
+    limit = 74;
   }
-  return output;
+  return chunks.map((chunk, index) => (index === 0 ? chunk : ` ${chunk}`)).join("\r\n");
 }
 
 function utcStamp(iso: string) {
@@ -32,6 +44,10 @@ function dayStamp(iso: string) {
   return iso.slice(0, 10).replaceAll("-", "");
 }
 
+function nextDayStamp(iso: string) {
+  return addCalendarDays(iso.slice(0, 10), 1).replaceAll("-", "");
+}
+
 function vevent(event: SportEvent, reminders: number[]) {
   const summary = eventSummary(event.league, event.title);
   const description = eventDescription({
@@ -46,11 +62,13 @@ function vevent(event: SportEvent, reminders: number[]) {
   const lines = [
     "BEGIN:VEVENT",
     `UID:sporttime-${event.sourceId}@sporttime`,
-    `DTSTAMP:${utcStamp(new Date().toISOString())}`,
+    `DTSTAMP:${utcStamp(event.start)}`,
     event.allDay || !event.timeConfirmed
       ? `DTSTART;VALUE=DATE:${dayStamp(event.start)}`
       : `DTSTART:${utcStamp(event.start)}`,
-    event.allDay || !event.timeConfirmed ? `DTEND;VALUE=DATE:${dayStamp(event.end)}` : `DTEND:${utcStamp(event.end)}`,
+    event.allDay || !event.timeConfirmed
+      ? `DTEND;VALUE=DATE:${nextDayStamp(event.start)}`
+      : `DTEND:${utcStamp(event.end)}`,
     `SUMMARY:${escapeText(summary)}`,
     `DESCRIPTION:${escapeText(description)}`,
     `STATUS:${event.timeConfirmed ? "CONFIRMED" : "TENTATIVE"}`,

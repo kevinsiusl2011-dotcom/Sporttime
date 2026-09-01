@@ -1,3 +1,4 @@
+import { entityIsFollowed } from "@/lib/follows";
 import { BilingualName } from "@/components/bilingual-name";
 import { FollowButton } from "@/components/follow-button";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
@@ -44,7 +45,7 @@ export function EntityFollowGrid({
                   label={item.name}
                   sport={item.sport}
                   extra={item.extra}
-                  following={following.has(`${kind}:${item.id}`)}
+                  following={entityIsFollowed(following, kind, item.id, item.name)}
                   followLabel={t.follow}
                   unfollowLabel={t.unfollow}
                   errorLabel={t.followFailed}

@@ -1,4 +1,4 @@
-import { dbGet, type UserRow } from "@/lib/db";
+import { findUserByFeedToken } from "@/lib/account/merge";
 import { calendarBodyForUser } from "@/lib/sync/engine";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
@@ -7,7 +7,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     return new Response("Not found", { status: 404 });
   }
 
-  const user = await dbGet<UserRow>("SELECT * FROM users WHERE feed_token = ?", [token]);
+  const user = await findUserByFeedToken(token);
   if (!user) return new Response("Not found", { status: 404 });
 
   const body = await calendarBodyForUser(user);
@@ -17,7 +17,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": 'inline; filename="sporttime.ics"',
       // Short browser/CDN cache; source of truth refreshes on FEED_TTL / cron.
-      "Cache-Control": "public, max-age=900",
+      "Cache-Control": "private, max-age=900",
     },
   });
 }

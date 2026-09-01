@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 const COOKIE = "sporttime_session";
+const SESSION_HEADER = "x-sporttime-session";
 
 export type SessionUser = {
   id: string;
@@ -20,7 +21,7 @@ export async function createSession(user: SessionUser) {
   const token = await new SignJWT(user)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("30d")
+    .setExpirationTime("400d")
     .sign(secret());
 
   (await cookies()).set(COOKIE, token, {
@@ -28,7 +29,7 @@ export async function createSession(user: SessionUser) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: 60 * 60 * 24 * 400,
   });
 }
 
@@ -37,7 +38,7 @@ export async function destroySession() {
 }
 
 export async function getSession(): Promise<{ user: SessionUser } | null> {
-  const token = (await cookies()).get(COOKIE)?.value;
+  const token = (await cookies()).get(COOKIE)?.value ?? (await headers()).get(SESSION_HEADER);
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret());

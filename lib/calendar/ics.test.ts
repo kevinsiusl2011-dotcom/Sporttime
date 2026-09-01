@@ -26,6 +26,7 @@ test("builds a calendar with an upcoming fixture", () => {
     /SUMMARY:英超：阿仙奴對車路士/,
   );
   assert.match(ics, /DTSTART:20260901T180000Z/);
+  assert.match(ics, /DTSTAMP:20260901T180000Z/);
   assert.match(ics, /UID:sporttime-123@sporttime/);
   assert.match(ics, /TRIGGER:-PT60M/);
   assert.match(ics, /STATUS:CONFIRMED/);
@@ -35,4 +36,24 @@ test("builds a calendar with an upcoming fixture", () => {
   assert.match(ics, /REFRESH-INTERVAL;VALUE=DURATION:PT1H/);
   assert.match(ics, /X-PUBLISHED-TTL:PT1H/);
   assert.match(ics, /X-WR-TIMEZONE:Asia\/Hong_Kong/);
+});
+
+test("all-day TBA fixtures occupy the Hong Kong calendar day", () => {
+  const event: SportEvent = {
+    source: "thesportsdb",
+    sourceId: "tba",
+    title: "TBD fixture",
+    start: "2026-10-01T12:00:00.000Z",
+    end: "2026-10-01T14:30:00.000Z",
+    allDay: true,
+    timeConfirmed: false,
+    location: "",
+    description: "",
+    sport: "Soccer",
+    league: "English Premier League",
+  };
+  const ics = buildCalendar([event], "60");
+  assert.match(ics, /DTSTART;VALUE=DATE:20261001/);
+  assert.match(ics, /DTEND;VALUE=DATE:20261002/);
+  assert.match(ics, /STATUS:TENTATIVE/);
 });

@@ -43,6 +43,7 @@ const SQLITE_SCHEMA = `
       timezone TEXT,
       reminder_minutes TEXT NOT NULL DEFAULT '60,1440',
       feed_token TEXT,
+      feed_token_alias TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -102,6 +103,7 @@ async function migrate() {
   try {
     if (isPostgres) {
       await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token TEXT", []);
+      await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_token_alias TEXT", []);
       await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_ics TEXT", []);
       await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_events_json TEXT", []);
       await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_built_at BIGINT", []);
@@ -116,6 +118,7 @@ async function migrate() {
       "ALTER TABLE users ADD COLUMN feed_ics TEXT",
       "ALTER TABLE users ADD COLUMN feed_events_json TEXT",
       "ALTER TABLE users ADD COLUMN feed_built_at INTEGER",
+      "ALTER TABLE users ADD COLUMN feed_token_alias TEXT",
     ]) {
       try {
         await sqliteClient().execute(statement);
@@ -126,8 +129,15 @@ async function migrate() {
   }
   if (isPostgres) {
     await neon(postgresUrl!).query("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token)", []);
+    await neon(postgresUrl!).query(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token_alias ON users(feed_token_alias)",
+      [],
+    );
   } else {
     await sqliteClient().execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token ON users(feed_token)");
+    await sqliteClient().execute(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_feed_token_alias ON users(feed_token_alias)",
+    );
   }
   migrated = true;
 }
@@ -160,6 +170,7 @@ export type UserRow = {
   timezone: string | null;
   reminder_minutes: string;
   feed_token: string | null;
+  feed_token_alias?: string | null;
   feed_ics?: string | null;
   feed_events_json?: string | null;
   feed_built_at?: number | null;

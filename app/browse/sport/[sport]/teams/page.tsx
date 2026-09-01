@@ -4,7 +4,7 @@ import { BrowseSubnav } from "@/components/browse-subnav";
 import { EntityFollowGrid } from "@/components/entity-follow-grid";
 import { AppFrame } from "@/components/app-frame";
 import { SportChipRow } from "@/components/sport-chip-row";
-import { listFollows } from "@/lib/follows";
+import { followedSet, listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary } from "@/lib/i18n";
 import { BilingualName } from "@/components/bilingual-name";
@@ -21,7 +21,7 @@ export default async function SportTeamsPage({ params }: { params: Promise<{ spo
   const { t, locale } = await getDictionary();
   const groups = popularTeamGroups(sport);
   const follows = await listFollows(user.id);
-  const following = new Set(follows.map((follow) => `${follow.kind}:${follow.source_id}`));
+  const following = followedSet(follows);
 
   return (
     <AppFrame t={t} locale={locale} wide>

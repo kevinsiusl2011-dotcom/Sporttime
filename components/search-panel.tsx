@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { FollowButton } from "@/components/follow-button";
+import { entityIsFollowed } from "@/lib/follows";
 import type { SearchResults } from "@/lib/sports/types";
 import { BilingualName } from "@/components/bilingual-name";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
@@ -188,7 +189,7 @@ function ResultGroup({
               label={item.label}
               sport={item.sport}
               extra={item.extra}
-              following={followed.has(`${item.kind}:${item.id}`)}
+              following={entityIsFollowed(followed, item.kind, item.id, item.label)}
               followLabel={t.follow}
               unfollowLabel={t.unfollow}
               errorLabel={t.followFailed}
