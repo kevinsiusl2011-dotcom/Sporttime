@@ -1,7 +1,10 @@
 export type FollowKind = "sport" | "league" | "team" | "athlete";
 
+export type EventSource = "thesportsdb" | "openf1" | "ticketmaster";
+export type EventKind = "fixture" | "session" | "appearance";
+
 export type SportEvent = {
-  source: "thesportsdb";
+  source: EventSource;
   sourceId: string;
   title: string;
   start: string;
@@ -20,6 +23,8 @@ export type SportEvent = {
   country?: string;
   thumb?: string;
   status?: string;
+  kind?: EventKind;
+  sessionName?: string;
 };
 
 export type CatalogLeague = {

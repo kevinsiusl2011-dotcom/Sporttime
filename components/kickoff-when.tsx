@@ -10,11 +10,13 @@ export function KickoffWhen({
   timeConfirmed,
   locale,
   t,
+  timeZone,
 }: {
   start: string;
   end: string;
   timeConfirmed: boolean;
   locale: Locale;
+  timeZone?: string;
   t: Pick<
     Dictionary,
     | "timeTbd"
@@ -33,7 +35,7 @@ export function KickoffWhen({
     return () => window.clearInterval(timer);
   }, []);
 
-  const label = formatKickoffRelative(start, end, timeConfirmed, locale, t, new Date(now));
+  const label = formatKickoffRelative(start, end, timeConfirmed, locale, t, new Date(now), timeZone);
   if (!label) return null;
   return (
     <span className="text-sm font-medium text-[var(--accent)]" suppressHydrationWarning>

@@ -42,6 +42,7 @@ const SQLITE_SCHEMA = `
       locale TEXT NOT NULL DEFAULT 'zh-Hant',
       timezone TEXT,
       reminder_minutes TEXT NOT NULL DEFAULT '60,1440',
+      include_appearances INTEGER NOT NULL DEFAULT 0,
       feed_token TEXT,
       feed_token_alias TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -107,6 +108,7 @@ async function migrate() {
       await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_ics TEXT", []);
       await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_events_json TEXT", []);
       await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS feed_built_at BIGINT", []);
+      await neon(postgresUrl!).query("ALTER TABLE users ADD COLUMN IF NOT EXISTS include_appearances INTEGER DEFAULT 0", []);
     } else {
       await sqliteClient().execute("ALTER TABLE users ADD COLUMN feed_token TEXT");
     }
@@ -119,6 +121,7 @@ async function migrate() {
       "ALTER TABLE users ADD COLUMN feed_events_json TEXT",
       "ALTER TABLE users ADD COLUMN feed_built_at INTEGER",
       "ALTER TABLE users ADD COLUMN feed_token_alias TEXT",
+      "ALTER TABLE users ADD COLUMN include_appearances INTEGER",
     ]) {
       try {
         await sqliteClient().execute(statement);
@@ -169,6 +172,7 @@ export type UserRow = {
   locale: string;
   timezone: string | null;
   reminder_minutes: string;
+  include_appearances?: number | boolean | null;
   feed_token: string | null;
   feed_token_alias?: string | null;
   feed_ics?: string | null;

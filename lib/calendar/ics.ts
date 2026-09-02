@@ -1,7 +1,17 @@
 import { parseReminders } from "@/lib/env";
+import type { Locale } from "@/lib/i18n/dictionaries";
 import { displayName, eventDescription, eventSummary } from "@/lib/i18n/localize";
 import type { SportEvent } from "@/lib/sports/types";
+import { DEFAULT_TIME_ZONE } from "@/lib/timezone";
 import { addCalendarDays } from "@/lib/utils";
+
+export type CalendarOptions = {
+  reminderMinutes?: string;
+  timeZone?: string;
+  locale?: Locale;
+  name?: string;
+  description?: string;
+};
 
 function escapeText(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
@@ -48,20 +58,28 @@ function nextDayStamp(iso: string) {
   return addCalendarDays(iso.slice(0, 10), 1).replaceAll("-", "");
 }
 
-function vevent(event: SportEvent, reminders: number[]) {
-  const summary = eventSummary(event.league, event.title);
-  const description = eventDescription({
-    league: event.league,
-    title: event.title,
-    location: event.location,
-    timeConfirmed: event.timeConfirmed,
-    start: event.start,
-    home: event.home,
-    away: event.away,
-  });
+function eventUid(event: SportEvent) {
+  if (event.source === "thesportsdb") return `sporttime-${event.sourceId}@sporttime`;
+  return `sporttime-${event.source}-${event.sourceId}@sporttime`;
+}
+
+function vevent(event: SportEvent, reminders: number[], locale: Locale, timeZone: string) {
+  const summary = eventSummary(event.league, event.title, locale);
+  const description = eventDescription(
+    {
+      league: event.league,
+      title: event.title,
+      location: event.location,
+      timeConfirmed: event.timeConfirmed,
+      start: event.start,
+      home: event.home,
+      away: event.away,
+    },
+    timeZone,
+  );
   const lines = [
     "BEGIN:VEVENT",
-    `UID:sporttime-${event.sourceId}@sporttime`,
+    `UID:${eventUid(event)}`,
     `DTSTAMP:${utcStamp(event.start)}`,
     event.allDay || !event.timeConfirmed
       ? `DTSTART;VALUE=DATE:${dayStamp(event.start)}`
@@ -73,7 +91,8 @@ function vevent(event: SportEvent, reminders: number[]) {
     `DESCRIPTION:${escapeText(description)}`,
     `STATUS:${event.timeConfirmed ? "CONFIRMED" : "TENTATIVE"}`,
   ];
-  if (event.location) lines.push(`LOCATION:${escapeText(displayName(event.location, "zh-Hant"))}`);
+  if (event.sport) lines.push(`CATEGORIES:${escapeText(event.sport)}`);
+  if (event.location) lines.push(`LOCATION:${escapeText(displayName(event.location, locale))}`);
   for (const minutes of reminders.slice(0, 5)) {
     lines.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${escapeText(summary)}`, `TRIGGER:-PT${minutes}M`, "END:VALARM");
   }
@@ -81,8 +100,24 @@ function vevent(event: SportEvent, reminders: number[]) {
   return lines;
 }
 
-export function buildCalendar(events: SportEvent[], reminderMinutes?: string) {
-  const reminders = parseReminders(reminderMinutes);
+function resolveOptions(options?: string | CalendarOptions): CalendarOptions {
+  if (typeof options === "string") return { reminderMinutes: options };
+  return options ?? {};
+}
+
+export function buildCalendar(events: SportEvent[], options?: string | CalendarOptions) {
+  const resolved = resolveOptions(options);
+  const reminders = parseReminders(resolved.reminderMinutes);
+  const timeZone = resolved.timeZone || DEFAULT_TIME_ZONE;
+  const locale = resolved.locale ?? "zh-Hant";
+  const name = resolved.name || (locale === "en" ? "Sporttime fixtures" : "Sporttime 賽程");
+  const description =
+    resolved.description ||
+    (locale === "en"
+      ? "Kickoff times on your calendar for planning. Not live scores."
+      : locale === "zh-Hans"
+        ? "开赛时间写入你的日历，方便排程。不提供即时比分。"
+        : "開波時間寫入你嘅日曆，方便排程。唔提供即時比分。");
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -91,11 +126,11 @@ export function buildCalendar(events: SportEvent[], reminderMinutes?: string) {
     "METHOD:PUBLISH",
     "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
     "X-PUBLISHED-TTL:PT1H",
-    "X-WR-CALNAME:Sporttime 賽程",
-    "X-WR-CALDESC:開波時間寫入你嘅日曆，方便排程。唔提供即時比分。",
-    "X-WR-TIMEZONE:Asia/Hong_Kong",
+    `X-WR-CALNAME:${escapeText(name)}`,
+    `X-WR-CALDESC:${escapeText(description)}`,
+    `X-WR-TIMEZONE:${timeZone}`,
   ];
-  for (const event of events) lines.push(...vevent(event, reminders));
+  for (const event of events) lines.push(...vevent(event, reminders, locale, timeZone));
   lines.push("END:VCALENDAR");
   return `${lines.map(fold).join("\r\n")}\r\n`;
 }

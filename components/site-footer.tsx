@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 export function SiteFooter({
@@ -32,6 +33,14 @@ export function SiteFooter({
             </p>
           ) : null}
           <p className="max-w-2xl text-sm leading-relaxed text-[var(--muted)]">{t.footer}</p>
+          <p className="flex flex-wrap gap-4 text-sm">
+            <Link href="/privacy" className="text-[var(--accent)] underline-offset-4 hover:underline">
+              {t.privacy}
+            </Link>
+            <Link href="/terms" className="text-[var(--accent)] underline-offset-4 hover:underline">
+              {t.terms}
+            </Link>
+          </p>
         </div>
         <p className="text-xs tracking-[0.16em] text-[var(--muted)] uppercase">{t.brand}</p>
       </div>

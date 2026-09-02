@@ -1,6 +1,7 @@
 import { interpolate } from "@/lib/i18n/interpolate";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import type { SportEvent } from "@/lib/sports/types";
+import { DEFAULT_TIME_ZONE } from "@/lib/timezone";
 import { addCalendarDays, formatTime, zonedYmd } from "@/lib/utils";
 
 export type ScheduleSummary = {
@@ -38,8 +39,8 @@ function ymdDiff(fromYmd: string, toYmd: string): number {
   return Math.round((to - from) / 86_400_000);
 }
 
-export function summarizeSchedule(events: SportEvent[], now = new Date()): ScheduleSummary {
-  const today = zonedYmd(now.toISOString());
+export function summarizeSchedule(events: SportEvent[], now = new Date(), timeZone = DEFAULT_TIME_ZONE): ScheduleSummary {
+  const today = zonedYmd(now.toISOString(), timeZone);
   const tomorrow = addCalendarDays(today, 1);
   const weekEnd = addCalendarDays(today, 6);
   const nowMs = now.getTime();
@@ -89,6 +90,7 @@ export function kickoffRelative(
   endIso: string,
   timeConfirmed: boolean,
   now = new Date(),
+  timeZone = DEFAULT_TIME_ZONE,
 ): KickoffRelative {
   if (!timeConfirmed) return { kind: "tbd" };
   const start = new Date(startIso).getTime();
@@ -103,8 +105,8 @@ export function kickoffRelative(
   const hours = Math.max(1, Math.round(minutes / 60));
   if (hours < 12) return { kind: "hours", count: hours };
 
-  const today = zonedYmd(now.toISOString());
-  const startDay = zonedYmd(startIso);
+  const today = zonedYmd(now.toISOString(), timeZone);
+  const startDay = zonedYmd(startIso, timeZone);
   if (startDay === today) return { kind: "today" };
   const days = ymdDiff(today, startDay);
   if (days === 1) return { kind: "tomorrow" };
@@ -119,8 +121,9 @@ export function formatKickoffRelative(
   locale: Locale,
   t: KickoffCopy,
   now = new Date(),
+  timeZone = DEFAULT_TIME_ZONE,
 ): string {
-  const relative = kickoffRelative(startIso, endIso, timeConfirmed, now);
+  const relative = kickoffRelative(startIso, endIso, timeConfirmed, now, timeZone);
   switch (relative.kind) {
     case "tbd":
       return t.timeTbd;
@@ -133,9 +136,9 @@ export function formatKickoffRelative(
     case "days":
       return interpolate(t.kickoffInDays, { count: relative.count });
     case "today":
-      return interpolate(t.kickoffToday, { time: formatTime(startIso, locale) });
+      return interpolate(t.kickoffToday, { time: formatTime(startIso, locale, timeZone) });
     case "tomorrow":
-      return interpolate(t.kickoffTomorrow, { time: formatTime(startIso, locale) });
+      return interpolate(t.kickoffTomorrow, { time: formatTime(startIso, locale, timeZone) });
     default:
       return "";
   }

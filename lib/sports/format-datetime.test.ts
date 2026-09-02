@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addCalendarDays, formatDateTime, formatTime, zonedYmd } from "../utils.ts";
+import { addCalendarDays, formatDateTime, formatTime, isoOnZonedDay, zonedYmd } from "../utils.ts";
 
 test("shows kickoff in Hong Kong time instead of UTC", () => {
   const text = formatDateTime("2026-09-12T14:00:00.000Z", "zh-Hant");
@@ -21,6 +21,12 @@ test("uses simplified copy for Hong Kong time", () => {
   assert.match(text, /香港时间/);
 });
 
+test("can format the same instant in Tokyo", () => {
+  const text = formatDateTime("2026-09-12T14:00:00.000Z", "zh-Hant", "Asia/Tokyo");
+  assert.match(text, /23:00/);
+  assert.doesNotMatch(text, /香港時間/);
+});
+
 test("keys fixtures by Hong Kong calendar day", () => {
   assert.equal(zonedYmd("2026-09-12T14:00:00.000Z"), "2026-09-12");
   assert.equal(zonedYmd("2026-09-12T16:30:00.000Z"), "2026-09-13");
@@ -29,6 +35,13 @@ test("keys fixtures by Hong Kong calendar day", () => {
 test("adds civil days without using the wall clock", () => {
   assert.equal(addCalendarDays("2026-09-12", 1), "2026-09-13");
   assert.equal(addCalendarDays("2026-12-31", 1), "2027-01-01");
+});
+
+test("picks an instant that still falls on the zoned civil day", () => {
+  const auckland = isoOnZonedDay("2026-09-01", "Pacific/Auckland");
+  assert.equal(zonedYmd(auckland, "Pacific/Auckland"), "2026-09-01");
+  const la = isoOnZonedDay("2026-09-01", "America/Los_Angeles");
+  assert.equal(zonedYmd(la, "America/Los_Angeles"), "2026-09-01");
 });
 
 test("shows kickoff time only in 24-hour Hong Kong clock", () => {

@@ -2,6 +2,7 @@ import { google, type calendar_v3 } from "googleapis";
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { dbGet, dbRun, type GoogleAccountRow } from "@/lib/db";
 import type { SportEvent } from "@/lib/sports/types";
+import { eventDescription, eventSummary } from "@/lib/i18n/localize";
 import { addCalendarDays, DEFAULT_TIME_ZONE } from "@/lib/utils";
 
 const CALENDAR_NAME = "Sporttime";
@@ -86,8 +87,16 @@ export function toCalendarEvent(
   reminders: number[],
 ): calendar_v3.Schema$Event {
   const base: calendar_v3.Schema$Event = {
-    summary: event.league ? `${event.league}: ${event.title}` : event.title,
-    description: event.description,
+    summary: eventSummary(event.league, event.title),
+    description: eventDescription({
+      league: event.league,
+      title: event.title,
+      location: event.location,
+      timeConfirmed: event.timeConfirmed,
+      start: event.start,
+      home: event.home,
+      away: event.away,
+    }),
     location: event.location || undefined,
     source: { title: "Sporttime", url: "https://www.thesportsdb.com" },
     extendedProperties: {

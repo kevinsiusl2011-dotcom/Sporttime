@@ -10,6 +10,7 @@ import { getDictionary, type Dictionary, type Locale } from "@/lib/i18n";
 import { findCatalogLeague } from "@/lib/sports/catalog";
 import { listLeagueTeams, lookupLeague, seasonEvents } from "@/lib/sports/thesportsdb";
 import type { CatalogLeague } from "@/lib/sports/types";
+import { resolveTimeZone, timeZoneClockLabel } from "@/lib/timezone";
 
 export default async function LeaguePage({ params }: { params: Promise<{ leagueId: string }> }) {
   const user = await ensureUserRecord();
@@ -21,6 +22,8 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
   const follows = await listFollows(user.id);
   const following = followedSet(follows);
   const followingIds = [...following];
+  const timeZone = resolveTimeZone(user.timezone);
+  const timeZoneLabel = timeZoneClockLabel(timeZone, locale);
 
   return (
     <AppFrame t={t} locale={locale} wide>
@@ -47,7 +50,14 @@ export default async function LeaguePage({ params }: { params: Promise<{ leagueI
       <section className="mt-10">
         <h2 className="mb-4 font-[family-name:var(--font-serif)] text-2xl">{t.upcoming}</h2>
         <Suspense fallback={<p className="text-[var(--muted)]">{t.loadingEvents}</p>}>
-          <LeagueUpcoming leagueId={leagueId} sport={league.sport} t={t} locale={locale} />
+          <LeagueUpcoming
+            leagueId={leagueId}
+            sport={league.sport}
+            t={t}
+            locale={locale}
+            timeZone={timeZone}
+            timeZoneLabel={timeZoneLabel}
+          />
         </Suspense>
       </section>
 
@@ -66,14 +76,27 @@ async function LeagueUpcoming({
   sport,
   t,
   locale,
+  timeZone,
+  timeZoneLabel,
 }: {
   leagueId: string;
   sport: string;
   t: Dictionary;
   locale: Locale;
+  timeZone: string;
+  timeZoneLabel: string;
 }) {
   const events = await seasonEvents(leagueId, sport);
-  return <EventList events={events.slice(0, 80)} t={t} locale={locale} empty={t.emptyEvents} />;
+  return (
+    <EventList
+      events={events.slice(0, 80)}
+      t={t}
+      locale={locale}
+      empty={t.emptyEvents}
+      timeZone={timeZone}
+      timeZoneLabel={timeZoneLabel}
+    />
+  );
 }
 
 async function LeagueTeams({

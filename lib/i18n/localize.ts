@@ -102,27 +102,30 @@ export function eventHeadline(league: string, title: string): LocalizedText {
   };
 }
 
-export function eventSummary(league: string, title: string): string {
-  return pickLocalized(eventHeadline(league, title), "zh-Hant");
+export function eventSummary(league: string, title: string, locale: Locale = "zh-Hant"): string {
+  return pickLocalized(eventHeadline(league, title), locale);
 }
 
-export function eventDescription(input: {
-  league: string;
-  title: string;
-  location?: string;
-  timeConfirmed: boolean;
-  start?: string;
-  home?: string;
-  away?: string;
-}): string {
+export function eventDescription(
+  input: {
+    league: string;
+    title: string;
+    location?: string;
+    timeConfirmed: boolean;
+    start?: string;
+    home?: string;
+    away?: string;
+  },
+  timeZone?: string,
+): string {
   const headline = eventHeadline(input.league, input.title);
   const lines: string[] = [headline.hant];
   if (headline.en !== headline.hant) lines.push(headline.en);
   lines.push("");
 
   if (input.start && input.timeConfirmed) {
-    lines.push(`開波：${formatDateTime(input.start, "zh-Hant")}`);
-    lines.push(`Kickoff: ${formatDateTime(input.start, "en")}`);
+    lines.push(`開波：${formatDateTime(input.start, "zh-Hant", timeZone)}`);
+    lines.push(`Kickoff: ${formatDateTime(input.start, "en", timeZone)}`);
   } else {
     lines.push("開賽時間尚未確定。Kickoff time is not confirmed.");
   }

@@ -35,6 +35,7 @@ test("builds a calendar with an upcoming fixture", () => {
   assert.match(ics.replace(/\r\n /g, ""), /用嚟排程/);
   assert.match(ics, /REFRESH-INTERVAL;VALUE=DURATION:PT1H/);
   assert.match(ics, /X-PUBLISHED-TTL:PT1H/);
+  assert.match(ics, /CATEGORIES:Soccer/);
   assert.match(ics, /X-WR-TIMEZONE:Asia\/Hong_Kong/);
 });
 
@@ -56,4 +57,26 @@ test("all-day TBA fixtures occupy the Hong Kong calendar day", () => {
   assert.match(ics, /DTSTART;VALUE=DATE:20261001/);
   assert.match(ics, /DTEND;VALUE=DATE:20261002/);
   assert.match(ics, /STATUS:TENTATIVE/);
+});
+
+test("keeps TheSportsDB UIDs and namespaces other sources", () => {
+  const session: SportEvent = {
+    source: "openf1",
+    sourceId: "9140",
+    title: "Spa-Francorchamps Grand Prix — Race",
+    start: "2026-07-26T13:00:00.000Z",
+    end: "2026-07-26T15:00:00.000Z",
+    allDay: false,
+    timeConfirmed: true,
+    location: "Spa",
+    description: "",
+    sport: "Motorsport",
+    league: "Formula 1",
+    kind: "session",
+    sessionName: "Race",
+  };
+  const ics = buildCalendar([session], { reminderMinutes: "60", timeZone: "Europe/London", locale: "en" });
+  assert.match(ics, /UID:sporttime-openf1-9140@sporttime/);
+  assert.match(ics, /X-WR-TIMEZONE:Europe\/London/);
+  assert.match(ics, /CATEGORIES:Motorsport/);
 });

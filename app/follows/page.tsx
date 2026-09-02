@@ -6,6 +6,7 @@ import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary, interpolate } from "@/lib/i18n";
 import { BilingualName } from "@/components/bilingual-name";
+import { isRosterSport } from "@/lib/sports/athlete";
 import type { FollowKind } from "@/lib/sports/types";
 
 export default async function FollowsPage() {
@@ -59,6 +60,11 @@ export default async function FollowsPage() {
                   <p className="text-sm text-[var(--muted)]">
                     <BilingualName value={follow.sport} locale={locale} />
                   </p>
+                  {follow.kind === "athlete" ? (
+                    <p className="mt-2 max-w-md text-xs leading-relaxed text-[var(--muted)]">
+                      {isRosterSport(follow.sport) ? t.athleteClubNote : t.athletePersonalNote}
+                    </p>
+                  ) : null}
                 </div>
                 <FollowButton
                   kind={follow.kind as FollowKind}

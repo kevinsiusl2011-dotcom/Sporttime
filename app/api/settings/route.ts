@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ensureUserRecord, rotateFeedToken } from "@/lib/guest";
 import { dbRun } from "@/lib/db";
 import { isLocale } from "@/lib/i18n";
+import { isValidTimeZone } from "@/lib/timezone";
 import { calendarFeedUrl, googleSubscribeUrl } from "@/lib/urls";
 
 const schema = z.object({
@@ -9,6 +10,7 @@ const schema = z.object({
   timezone: z.string().optional(),
   locale: z.string().optional(),
   rotateFeed: z.boolean().optional(),
+  includeAppearances: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -29,6 +31,9 @@ export async function PATCH(request: Request) {
   if (parsed.data.locale && !isLocale(parsed.data.locale)) {
     return Response.json({ error: "Invalid locale" }, { status: 400 });
   }
+  if (parsed.data.timezone && !isValidTimeZone(parsed.data.timezone)) {
+    return Response.json({ error: "Invalid timezone" }, { status: 400 });
+  }
 
   if (parsed.data.rotateFeed) {
     const token = await rotateFeedToken(user.id);
@@ -41,11 +46,22 @@ export async function PATCH(request: Request) {
       reminder_minutes = COALESCE(?, reminder_minutes),
       timezone = COALESCE(?, timezone),
       locale = COALESCE(?, locale),
+      include_appearances = COALESCE(?, include_appearances),
       updated_at = datetime('now')
      WHERE id = ?`,
-    [parsed.data.reminderMinutes ?? null, parsed.data.timezone ?? null, parsed.data.locale ?? null, user.id],
+    [
+      parsed.data.reminderMinutes ?? null,
+      parsed.data.timezone ?? null,
+      parsed.data.locale ?? null,
+      parsed.data.includeAppearances === undefined ? null : parsed.data.includeAppearances ? 1 : 0,
+      user.id,
+    ],
   );
-  if (parsed.data.reminderMinutes) {
+  if (
+    parsed.data.reminderMinutes ||
+    parsed.data.timezone ||
+    parsed.data.includeAppearances !== undefined
+  ) {
     try {
       const { rebuildUserFeed } = await import("@/lib/sync/engine");
       await rebuildUserFeed(user.id);

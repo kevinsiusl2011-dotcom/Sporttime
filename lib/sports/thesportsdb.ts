@@ -15,8 +15,8 @@ const BASE = "https://www.thesportsdb.com/api/v1/json";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 8_000;
 /** Free tier truncates season dumps; pull several rounds + a short day window instead. */
-const FREE_ROUND_LOOKAHEAD = 6;
-const FREE_DAY_HORIZON = 18;
+const FREE_ROUND_LOOKAHEAD = 8;
+const FREE_DAY_HORIZON = 21;
 
 type CacheRow = { payload_json: string; expires_at: number };
 

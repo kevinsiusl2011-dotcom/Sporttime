@@ -1,4 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
+import { DEFAULT_TIME_ZONE, timeZoneShortName } from "@/lib/timezone";
+
+export { DEFAULT_TIME_ZONE };
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
@@ -8,8 +11,6 @@ export function absoluteUrl(path = ""): string {
   const base = process.env.AUTH_URL ?? "http://localhost:3000";
   return `${base.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 }
-
-export const DEFAULT_TIME_ZONE = "Asia/Hong_Kong";
 
 function clockLocale(locale: string) {
   return locale === "zh-Hant" ? "zh-HK" : locale === "zh-Hans" ? "zh-CN" : "en-GB";
@@ -70,9 +71,31 @@ export function formatDateTime(iso: string, locale: string, timeZone = DEFAULT_T
     hourCycle: "h23",
     timeZone,
   }).format(date);
-  if (locale === "zh-Hant") return `${clock}（香港時間）`;
-  if (locale === "zh-Hans") return `${clock}（香港时间）`;
-  return `${clock} HKT`;
+  const zone =
+    locale === "zh-Hant" || locale === "zh-Hans" || locale === "en"
+      ? timeZoneShortName(timeZone, locale)
+      : timeZone;
+  if (locale === "zh-Hant" || locale === "zh-Hans") return `${clock}（${zone}）`;
+  return `${clock} ${zone}`;
+}
+
+export function formatWeekdayShort(iso: string, locale: string, timeZone = DEFAULT_TIME_ZONE): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat(clockLocale(locale), {
+    weekday: "short",
+    timeZone,
+  }).format(date);
+}
+
+export function isoOnZonedDay(ymd: string, timeZone: string): string {
+  const utcMidnight = Date.parse(`${ymd}T00:00:00.000Z`);
+  if (Number.isNaN(utcMidnight)) return `${ymd}T12:00:00.000Z`;
+  for (let hour = -14; hour <= 20; hour += 1) {
+    const iso = new Date(utcMidnight + hour * 3_600_000).toISOString();
+    if (zonedYmd(iso, timeZone) === ymd) return iso;
+  }
+  return `${ymd}T12:00:00.000Z`;
 }
 
 export function sleep(ms: number) {
