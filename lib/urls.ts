@@ -17,8 +17,10 @@ export function appleCalendarUrl(feedUrl: string) {
 }
 
 export function googleSubscribeUrl(feedUrl: string) {
+  // webcal cid creates a live subscription; https often imports a one-off snapshot.
+  // /calendar/u/0/r is the current Google Calendar UI and works more reliably on phones.
   const webcalUrl = appleCalendarUrl(feedUrl);
-  return `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`;
+  return `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(webcalUrl)}`;
 }
 
 export function publicLeagueCalendarUrl(leagueId: string) {

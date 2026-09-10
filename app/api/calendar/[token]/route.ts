@@ -1,6 +1,8 @@
+import { after } from "next/server";
 import { findUserByFeedToken } from "@/lib/account/merge";
 import { parseFeedQuery } from "@/lib/calendar/feed";
-import { calendarBodyForUser } from "@/lib/sync/engine";
+import { calendarFeedHeaders, ifNoneMatchHits } from "@/lib/calendar/http";
+import { calendarBodyForUser, feedIsStale, rebuildUserFeed } from "@/lib/sync/engine";
 
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const token = (await params).token.replace(/\.ics$/i, "");
@@ -12,13 +14,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ toke
   if (!user) return new Response("Not found", { status: 404 });
 
   const query = parseFeedQuery(new URL(request.url));
-  const body = await calendarBodyForUser(user, query);
+  const refreshInBackground = Boolean(user.feed_events_json) && feedIsStale(user);
+  const { ics, builtAt } = await calendarBodyForUser(user, query);
+  const headers = calendarFeedHeaders(builtAt, query);
 
-  return new Response(body, {
-    headers: {
-      "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": 'inline; filename="sporttime.ics"',
-      "Cache-Control": "private, max-age=900",
-    },
-  });
+  if (refreshInBackground) {
+    after(() => {
+      void rebuildUserFeed(user.id).catch((error) => {
+        console.error("Background calendar rebuild failed", user.id, error);
+      });
+    });
+  }
+
+  if (ifNoneMatchHits(request, headers.ETag)) {
+    return new Response(null, { status: 304, headers });
+  }
+
+  return new Response(ics, { headers });
 }

@@ -1,3 +1,4 @@
+import { eventRevisionKey, type FeedRevision } from "@/lib/calendar/revisions";
 import { parseReminders } from "@/lib/env";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import { displayName, eventDescription, eventSummary } from "@/lib/i18n/localize";
@@ -11,6 +12,8 @@ export type CalendarOptions = {
   locale?: Locale;
   name?: string;
   description?: string;
+  revisions?: Record<string, FeedRevision>;
+  generatedAt?: string;
 };
 
 function escapeText(value: string) {
@@ -63,7 +66,14 @@ function eventUid(event: SportEvent) {
   return `sporttime-${event.source}-${event.sourceId}@sporttime`;
 }
 
-function vevent(event: SportEvent, reminders: number[], locale: Locale, timeZone: string) {
+function vevent(
+  event: SportEvent,
+  reminders: number[],
+  locale: Locale,
+  timeZone: string,
+  revision?: FeedRevision,
+  generatedAt?: string,
+) {
   const summary = eventSummary(event.league, event.title, locale);
   const description = eventDescription(
     {
@@ -77,10 +87,13 @@ function vevent(event: SportEvent, reminders: number[], locale: Locale, timeZone
     },
     timeZone,
   );
+  const stamp = utcStamp(revision?.stamp || generatedAt || event.start);
   const lines = [
     "BEGIN:VEVENT",
     `UID:${eventUid(event)}`,
-    `DTSTAMP:${utcStamp(event.start)}`,
+    `DTSTAMP:${stamp}`,
+    `LAST-MODIFIED:${stamp}`,
+    `SEQUENCE:${revision?.sequence ?? 0}`,
     event.allDay || !event.timeConfirmed
       ? `DTSTART;VALUE=DATE:${dayStamp(event.start)}`
       : `DTSTART:${utcStamp(event.start)}`,
@@ -118,6 +131,7 @@ export function buildCalendar(events: SportEvent[], options?: string | CalendarO
       : locale === "zh-Hans"
         ? "开赛时间写入你的日历，方便排程。不提供即时比分。"
         : "開波時間寫入你嘅日曆，方便排程。唔提供即時比分。");
+  const generatedAt = resolved.generatedAt;
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -130,7 +144,19 @@ export function buildCalendar(events: SportEvent[], options?: string | CalendarO
     `X-WR-CALDESC:${escapeText(description)}`,
     `X-WR-TIMEZONE:${timeZone}`,
   ];
-  for (const event of events) lines.push(...vevent(event, reminders, locale, timeZone));
+  if (generatedAt) lines.push(`LAST-MODIFIED:${utcStamp(generatedAt)}`);
+  for (const event of events) {
+    lines.push(
+      ...vevent(
+        event,
+        reminders,
+        locale,
+        timeZone,
+        resolved.revisions?.[eventRevisionKey(event)],
+        generatedAt,
+      ),
+    );
+  }
   lines.push("END:VCALENDAR");
   return `${lines.map(fold).join("\r\n")}\r\n`;
 }

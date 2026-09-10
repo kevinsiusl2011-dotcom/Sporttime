@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { appleCalendarUrl, googleSubscribeUrl } from "@/lib/urls";
 
 function copyText(value: string) {
   if (navigator.clipboard?.writeText) {
@@ -20,9 +21,7 @@ function copyText(value: string) {
 }
 
 function subscribeUrls(feedUrl: string) {
-  const appleUrl = feedUrl.replace(/^https?:/i, "webcal:");
-  const googleUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(appleUrl)}`;
-  return { appleUrl, googleUrl };
+  return { appleUrl: appleCalendarUrl(feedUrl), googleUrl: googleSubscribeUrl(feedUrl) };
 }
 
 export type CalendarFeedOption = { label: string; url: string };
@@ -58,6 +57,7 @@ export function CalendarSubscribe({
         {t.autoUpdateNote}
       </p>
       <p className="text-[var(--muted)]">{t.calendarHelp}</p>
+      <p className="text-sm leading-relaxed text-[var(--muted)]">{t.googlePhoneHelp}</p>
       <p className="break-all rounded-2xl border border-[var(--line)] bg-[var(--bg-elevated)] px-4 py-3 text-sm">
         {feedUrl}
       </p>

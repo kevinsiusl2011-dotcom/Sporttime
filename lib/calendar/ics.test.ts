@@ -27,6 +27,8 @@ test("builds a calendar with an upcoming fixture", () => {
   );
   assert.match(ics, /DTSTART:20260901T180000Z/);
   assert.match(ics, /DTSTAMP:20260901T180000Z/);
+  assert.match(ics, /LAST-MODIFIED:20260901T180000Z/);
+  assert.match(ics, /SEQUENCE:0/);
   assert.match(ics, /UID:sporttime-123@sporttime/);
   assert.match(ics, /TRIGGER:-PT60M/);
   assert.match(ics, /STATUS:CONFIRMED/);
@@ -79,4 +81,33 @@ test("keeps TheSportsDB UIDs and namespaces other sources", () => {
   assert.match(ics, /UID:sporttime-openf1-9140@sporttime/);
   assert.match(ics, /X-WR-TIMEZONE:Europe\/London/);
   assert.match(ics, /CATEGORIES:Motorsport/);
+});
+
+test("keeps DTSTAMP monotonic when a kickoff moves earlier", () => {
+  const event: SportEvent = {
+    source: "thesportsdb",
+    sourceId: "123",
+    title: "Arsenal vs Chelsea",
+    start: "2026-09-01T16:00:00.000Z",
+    end: "2026-09-01T18:30:00.000Z",
+    allDay: false,
+    timeConfirmed: true,
+    location: "Emirates Stadium",
+    description: "Premier League",
+    sport: "Soccer",
+    league: "English Premier League",
+    home: "Arsenal",
+    away: "Chelsea",
+  };
+  const ics = buildCalendar([event], {
+    reminderMinutes: "60",
+    revisions: {
+      "thesportsdb:123": { sequence: 2, stamp: "2026-09-10T08:00:00.000Z", hash: "changed" },
+    },
+    generatedAt: "2026-09-10T08:00:00.000Z",
+  });
+  assert.match(ics, /DTSTART:20260901T160000Z/);
+  assert.match(ics, /DTSTAMP:20260910T080000Z/);
+  assert.match(ics, /LAST-MODIFIED:20260910T080000Z/);
+  assert.match(ics, /SEQUENCE:2/);
 });

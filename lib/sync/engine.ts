@@ -1,8 +1,9 @@
 import { eventFingerprint } from "@/lib/sports/normalize";
 import { upcomingForFollow } from "@/lib/sports/thesportsdb";
-import { calendarFeedDescription, calendarFeedName, filterFeedEvents, type FeedQuery } from "@/lib/calendar/feed";
+import { calendarFeedDescription, calendarFeedName, filterFeedEvents, hasFeedFilter, type FeedQuery } from "@/lib/calendar/feed";
 import { deleteCalendarEvent, ensureSporttimeCalendar, upsertCalendarEvent } from "@/lib/calendar/google";
 import { buildCalendar } from "@/lib/calendar/ics";
+import { nextRevisions, parseStoredFeed, serializeStoredFeed } from "@/lib/calendar/revisions";
 import { dbAll, dbGet, dbRun, type FollowRow, type UserRow } from "@/lib/db";
 import { parseReminders } from "@/lib/env";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
@@ -72,54 +73,82 @@ export async function rebuildUserFeed(userId: string): Promise<SportEvent[]> {
   const events = await collectUpcoming(userId);
   const user = await dbGet<UserRow>("SELECT * FROM users WHERE id = ?", [userId]);
   const locale = isLocale(user?.locale) ? user.locale : "zh-Hant";
+  const previous = parseStoredFeed(user?.feed_events_json);
+  const generatedAt = new Date().toISOString();
+  const revisions = nextRevisions(events, previous.revisions, generatedAt);
   const ics = buildCalendar(events, {
     reminderMinutes: user?.reminder_minutes,
     timeZone: resolveTimeZone(user?.timezone),
     locale,
+    revisions,
+    generatedAt,
   });
   await dbRun(
     `UPDATE users SET feed_ics = ?, feed_events_json = ?, feed_built_at = ?, updated_at = datetime('now') WHERE id = ?`,
-    [ics, JSON.stringify(events), Date.now(), userId],
+    [ics, serializeStoredFeed(events, revisions), Date.now(), userId],
   );
   return events;
 }
 
-export async function eventsForPreview(userId: string): Promise<SportEvent[]> {
-  const user = await dbGet<UserRow>("SELECT * FROM users WHERE id = ?", [userId]);
-  const builtAt = Number(user?.feed_built_at ?? 0);
-  if (user?.feed_events_json && Date.now() - builtAt < FEED_TTL_MS) {
-    try {
-      return JSON.parse(user.feed_events_json) as SportEvent[];
-    } catch {
-      // rebuild below
-    }
+export function feedIsStale(user: Pick<UserRow, "feed_built_at">) {
+  return Date.now() - Number(user.feed_built_at ?? 0) >= FEED_TTL_MS;
+}
+
+function snapshotFromUser(user: UserRow) {
+  const stored = parseStoredFeed(user.feed_events_json);
+  return {
+    events: stored.events,
+    revisions: stored.revisions,
+    builtAt: Number(user.feed_built_at ?? 0),
+    ics: user.feed_ics ?? null,
+  };
+}
+
+async function loadFeedSnapshot(user: UserRow, preferCache: boolean) {
+  const cached = snapshotFromUser(user);
+  const hasCache = user.feed_events_json != null && user.feed_events_json !== "";
+  if (hasCache && (preferCache || !feedIsStale(user))) {
+    return cached;
   }
   try {
-    return await rebuildUserFeed(userId);
+    await rebuildUserFeed(user.id);
+    const fresh = await dbGet<UserRow>("SELECT * FROM users WHERE id = ?", [user.id]);
+    return fresh ? snapshotFromUser(fresh) : cached;
   } catch (error) {
-    if (user?.feed_events_json) {
-      try {
-        return JSON.parse(user.feed_events_json) as SportEvent[];
-      } catch {
-        // fall through
-      }
-    }
+    if (hasCache) return cached;
     throw error;
   }
 }
 
-export async function calendarBodyForUser(user: UserRow, query: FeedQuery = {}): Promise<string> {
-  const events = await eventsForPreview(user.id);
+export async function eventsForPreview(userId: string): Promise<SportEvent[]> {
+  const user = await dbGet<UserRow>("SELECT * FROM users WHERE id = ?", [userId]);
+  if (!user) return rebuildUserFeed(userId);
+  return (await loadFeedSnapshot(user, false)).events;
+}
+
+export async function calendarBodyForUser(
+  user: UserRow,
+  query: FeedQuery = {},
+): Promise<{ ics: string; builtAt: number }> {
+  const snapshot = await loadFeedSnapshot(user, true);
   const timeZone = resolveTimeZone(user.timezone);
   const locale = isLocale(user.locale) ? user.locale : "zh-Hant";
-  const filtered = filterFeedEvents(events, query, timeZone);
-  return buildCalendar(filtered, {
-    reminderMinutes: user.reminder_minutes,
-    timeZone,
-    locale,
-    name: calendarFeedName(query, locale),
-    description: calendarFeedDescription(locale),
-  });
+  if (!hasFeedFilter(query) && snapshot.ics) {
+    return { ics: snapshot.ics, builtAt: snapshot.builtAt };
+  }
+  const filtered = filterFeedEvents(snapshot.events, query, timeZone);
+  return {
+    ics: buildCalendar(filtered, {
+      reminderMinutes: user.reminder_minutes,
+      timeZone,
+      locale,
+      name: calendarFeedName(query, locale),
+      description: calendarFeedDescription(locale),
+      revisions: snapshot.revisions,
+      generatedAt: snapshot.builtAt ? new Date(snapshot.builtAt).toISOString() : undefined,
+    }),
+    builtAt: snapshot.builtAt,
+  };
 }
 
 async function mapPool<T, R>(items: T[], concurrency: number, worker: (item: T) => Promise<R>): Promise<R[]> {

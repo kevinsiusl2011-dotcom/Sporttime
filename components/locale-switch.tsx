@@ -11,10 +11,11 @@ export function LocaleSwitch({ locale, label }: { locale: string; label: string 
   }
 
   return (
-    <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
-      <span>{label}</span>
+    <label className="flex min-w-0 items-center gap-2 text-sm text-[var(--muted)]">
+      <span className="hidden sm:inline">{label}</span>
       <select
-        className="rounded-full border border-[var(--line)] bg-[var(--bg-elevated)] px-3 py-1 text-[var(--text)]"
+        aria-label={label}
+        className="max-w-[9.5rem] rounded-full border border-[var(--line)] bg-[var(--bg-elevated)] px-3 py-1 text-[var(--text)] sm:max-w-none"
         value={locale}
         onChange={(event) => setLocale(event.target.value)}
       >
