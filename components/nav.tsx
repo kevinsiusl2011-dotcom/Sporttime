@@ -23,7 +23,7 @@ export function Nav({ t, locale }: { t: Dictionary; locale: Locale }) {
           >
             <BrandLogo size={32} />
             <span className="truncate">{t.brand}</span>
-            <span className="badge-accent hidden sm:inline-flex">{t.freeToolBadge}</span>
+            <span className="badge-accent hidden md:inline-flex">{t.freeToolBadge}</span>
           </Link>
           <NavLinks items={items} variant="desktop" />
           <div className="flex min-w-0 items-center justify-end">
