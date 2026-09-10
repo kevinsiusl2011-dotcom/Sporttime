@@ -5,11 +5,11 @@ import { deleteCalendarEvent, ensureSporttimeCalendar, upsertCalendarEvent } fro
 import { buildCalendar } from "@/lib/calendar/ics";
 import { dbAll, dbGet, dbRun, type FollowRow, type UserRow } from "@/lib/db";
 import { parseReminders } from "@/lib/env";
-import { isLocale } from "@/lib/i18n";
+import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
 import { followWantsF1, mergeOpenF1Sessions } from "@/lib/sports/f1";
 import { upcomingF1Sessions } from "@/lib/sports/openf1";
 import { appearancesForAthletes, ticketmasterConfigured } from "@/lib/sports/ticketmaster";
-import type { SportEvent } from "@/lib/sports/types";
+import type { FollowKind, SportEvent } from "@/lib/sports/types";
 import { resolveTimeZone } from "@/lib/timezone";
 
 /** Rebuild cached ICS / preview JSON at least this often so subscriptions stay fresh. */
@@ -209,3 +209,81 @@ export async function syncAllUsers(): Promise<{ users: number; results: SyncResu
   const refreshed = await refreshAllFeeds();
   return { users: refreshed.users, results: [] };
 }
+
+function syntheticFollow(kind: FollowKind, sourceId: string, sport?: string): FollowRow {
+  return {
+    id: `public-${kind}-${sourceId}`,
+    user_id: "public",
+    kind,
+    source_id: sourceId,
+    label: "",
+    sport: sport ?? null,
+    extra_json: null,
+    added_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    source: "thesportsdb",
+  } as unknown as FollowRow;
+}
+
+export async function eventsForEntity(
+  kind: FollowKind,
+  sourceId: string,
+  sport?: string,
+): Promise<SportEvent[]> {
+  const follow = syntheticFollow(kind, sourceId, sport);
+  const events = new Map<string, SportEvent>();
+  try {
+    const batch = await upcomingForFollow(follow);
+    for (const event of batch) {
+      events.set(`${event.source}:${event.sourceId}`, event);
+    }
+  } catch (error) {
+    console.error("Failed to load fixtures for entity", kind, sourceId, error);
+    return [];
+  }
+  if (followWantsF1(follow)) {
+    try {
+      mergeOpenF1Sessions(events, await upcomingF1Sessions());
+    } catch (error) {
+      console.error("Failed to merge F1 sessions for entity", kind, sourceId, error);
+    }
+  }
+  return [...events.values()].sort((a, b) => a.start.localeCompare(b.start));
+}
+
+export async function calendarBodyForEntity(
+  kind: FollowKind,
+  sourceId: string,
+  options?: {
+    locale?: Locale;
+    timeZone?: string;
+    title?: string;
+    description?: string;
+    sport?: string;
+  },
+): Promise<string> {
+  const { t, locale: defaultLocale } = await getDictionary();
+  const locale = options?.locale ?? defaultLocale;
+  const timeZone = resolveTimeZone(options?.timeZone ?? "Asia/Hong_Kong");
+  const events = await eventsForEntity(kind, sourceId, options?.sport);
+  const filtered = filterFeedEvents(events, {}, timeZone);
+  const name =
+    options?.title ||
+    (locale === "en"
+      ? `Sporttime · ${kind === "team" ? "Team" : kind === "league" ? "League" : "Sport"} calendar`
+      : locale === "zh-Hans"
+      ? `Sporttime · 赛事日历`
+      : `Sporttime · 賽事日曆`);
+  const description = options?.description ?? calendarFeedDescription(locale);
+  const titleHint = typeof (t as unknown as { noAccountNote?: string }).noAccountNote === "string"
+    ? (t as unknown as { noAccountNote: string }).noAccountNote
+    : "";
+  return buildCalendar(filtered, {
+    reminderMinutes: undefined,
+    timeZone,
+    locale,
+    name,
+    description: titleHint ? `${description}\n\n${titleHint}` : description,
+  });
+}
+

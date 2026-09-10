@@ -1,7 +1,11 @@
 import { Suspense } from "react";
 import { CalendarSubscribe, type CalendarFeedOption } from "@/components/calendar-subscribe";
+import { LeadGenBanner } from "@/components/lead-gen-banner";
 import { SchedulePlanner } from "@/components/schedule-planner";
+import { ShareWeekCard } from "@/components/share-week-card";
+import { TelegramGuideCard } from "@/components/telegram-guide-card";
 import { AppFrame } from "@/components/app-frame";
+import { companyBranding } from "@/lib/branding";
 import { horizonFeedUrl, sportFeedUrl } from "@/lib/calendar/feed";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
@@ -9,11 +13,12 @@ import { getDictionary, type Dictionary, type Locale } from "@/lib/i18n";
 import { displayName } from "@/lib/i18n/localize";
 import { eventsForPreview } from "@/lib/sync/engine";
 import { resolveTimeZone, timeZoneClockLabel } from "@/lib/timezone";
-import { calendarFeedUrl } from "@/lib/urls";
+import { calendarFeedUrl, publicAppUrl } from "@/lib/urls";
 
 export default async function PreviewPage() {
   const user = await ensureUserRecord();
   const { t, locale } = await getDictionary();
+  const company = companyBranding();
   const feedUrl = calendarFeedUrl(user.feed_token!);
   const follows = await listFollows(user.id);
   const timeZone = resolveTimeZone(user.timezone);
@@ -25,11 +30,13 @@ export default async function PreviewPage() {
       url: sportFeedUrl(user.feed_token!, sport),
     })),
   ];
+  const shareUrl = publicAppUrl();
 
   return (
     <AppFrame t={t} locale={locale}>
       <h1 className="font-[family-name:var(--font-serif)] text-4xl">{t.preview}</h1>
       <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.previewHelp}</p>
+      <p className="mt-2 text-sm text-[var(--gold)]">{t.noAccountNote}</p>
       <div className="mt-6">
         <CalendarSubscribe feedUrl={feedUrl} t={t} feeds={feeds} />
       </div>
@@ -48,6 +55,17 @@ export default async function PreviewPage() {
           />
         </Suspense>
       </section>
+      <section className="mt-14 grid gap-4">
+        <TelegramGuideCard t={t} />
+        <ShareWeekCard t={t} shareUrl={shareUrl} />
+      </section>
+      <LeadGenBanner
+        t={t}
+        variant="footer"
+        companyName={company.name}
+        companyUrl={company.url}
+        companyTagline={company.tagline}
+      />
     </AppFrame>
   );
 }

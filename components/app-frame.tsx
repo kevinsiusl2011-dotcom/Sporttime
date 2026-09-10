@@ -23,7 +23,12 @@ export function AppFrame({
       <Nav t={t} locale={locale} />
       <main className={cn("mx-auto px-5 py-10", wide ? "max-w-6xl" : narrow ? "max-w-3xl" : "max-w-4xl")}>
         {children}
-        <SiteFooter t={t} companyName={company.name} companyUrl={company.url} />
+        <SiteFooter
+          t={t}
+          companyName={company.name}
+          companyUrl={company.url}
+          companyTagline={company.tagline}
+        />
       </main>
     </div>
   );

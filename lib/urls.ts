@@ -20,3 +20,19 @@ export function googleSubscribeUrl(feedUrl: string) {
   const webcalUrl = appleCalendarUrl(feedUrl);
   return `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`;
 }
+
+export function publicLeagueCalendarUrl(leagueId: string) {
+  return `${publicAppUrl()}/api/public/calendar/league/${encodeURIComponent(leagueId)}.ics`;
+}
+
+export function publicTeamCalendarUrl(teamId: string) {
+  return `${publicAppUrl()}/api/public/calendar/team/${encodeURIComponent(teamId)}.ics`;
+}
+
+export function leaguePageUrl(leagueId: string) {
+  return `${publicAppUrl()}/league/${encodeURIComponent(leagueId)}`;
+}
+
+export function teamPageUrl(teamId: string) {
+  return `${publicAppUrl()}/club/${encodeURIComponent(teamId)}`;
+}

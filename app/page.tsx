@@ -2,14 +2,16 @@ import Link from "next/link";
 import { CalendarSubscribe } from "@/components/calendar-subscribe";
 import { FollowButton } from "@/components/follow-button";
 import { Nav } from "@/components/nav";
+import { ShareWeekCard } from "@/components/share-week-card";
 import { SiteFooter } from "@/components/site-footer";
+import { TelegramGuideCard } from "@/components/telegram-guide-card";
 import { companyBranding } from "@/lib/branding";
 import { listFollows } from "@/lib/follows";
 import { ensureUserRecord } from "@/lib/guest";
 import { getDictionary, interpolate } from "@/lib/i18n";
 import { displayName } from "@/lib/i18n/localize";
 import { quickFollowLeagues } from "@/lib/sports/quick-follows";
-import { calendarFeedUrl } from "@/lib/urls";
+import { calendarFeedUrl, publicAppUrl } from "@/lib/urls";
 
 export default async function HomePage() {
   const { t, locale } = await getDictionary();
@@ -28,6 +30,7 @@ export default async function HomePage() {
   }
   const quick = quickFollowLeagues();
   const followCount = following.size;
+  const shareUrl = publicAppUrl();
 
   return (
     <div>
@@ -46,6 +49,7 @@ export default async function HomePage() {
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-[var(--muted)] md:text-lg">
               {t.heroBody}
             </p>
+            <p className="mt-4 text-sm text-[var(--gold)]">{t.noAccountNote}</p>
             {followCount > 0 ? (
               <p className="mt-4 text-sm text-[var(--gold)]">
                 {interpolate(t.followingCount, { count: followCount })}
@@ -80,22 +84,46 @@ export default async function HomePage() {
           <p className="mt-3 max-w-2xl text-[var(--muted)]">{t.homeSubscribeHint}</p>
           <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {quick.map((league) => (
-              <article key={league.id} className="card flex items-center justify-between gap-3 p-5">
-                <div>
-                  <p className="text-xs tracking-[0.08em] text-[var(--gold)]">{displayName(league.sport, locale)}</p>
-                  <h3 className="mt-1 text-lg">{displayName(league.name, locale)}</h3>
+              <article key={league.id} className="card flex flex-col gap-3 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  {league.badge ? (
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--bg-elevated)] p-1">
+                      <img
+                        src={league.badge}
+                        alt={t.leagueBadgeAlt}
+                        className="h-full w-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs tracking-[0.08em] text-[var(--gold)]">
+                      {displayName(league.sport, locale)}
+                    </p>
+                    <h3 className="mt-1 text-lg leading-snug">
+                      {displayName(league.name, locale)}
+                    </h3>
+                  </div>
                 </div>
-                <FollowButton
-                  kind="league"
-                  sourceId={league.id}
-                  label={league.name}
-                  sport={league.sport}
-                  following={following.has(`league:${league.id}`)}
-                  followLabel={t.follow}
-                  unfollowLabel={t.unfollow}
-                  errorLabel={t.followFailed}
-                  pendingLabel={t.followPending}
-                />
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <Link
+                    href={`/league/${encodeURIComponent(league.id)}`}
+                    className="btn-ghost rounded-full px-4 py-2 text-xs"
+                  >
+                    👥 {t.fanZoneTitle}
+                  </Link>
+                  <FollowButton
+                    kind="league"
+                    sourceId={league.id}
+                    label={league.name}
+                    sport={league.sport}
+                    following={following.has(`league:${league.id}`)}
+                    followLabel={t.follow}
+                    unfollowLabel={t.unfollow}
+                    errorLabel={t.followFailed}
+                    pendingLabel={t.followPending}
+                  />
+                </div>
               </article>
             ))}
           </div>
@@ -147,7 +175,12 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <SiteFooter t={t} companyName={company.name} companyUrl={company.url} />
+        <section className="mt-14 grid gap-4">
+          <TelegramGuideCard t={t} />
+          <ShareWeekCard t={t} shareUrl={shareUrl} />
+        </section>
+
+        <SiteFooter t={t} companyName={company.name} companyUrl={company.url} companyTagline={company.tagline} />
       </main>
     </div>
   );
