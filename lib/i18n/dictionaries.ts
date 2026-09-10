@@ -112,6 +112,8 @@ export const dictionaries = {
     subscribeTitle: "加入日曆",
     calendarHelp:
       "撳加入 Google 或 Apple 日曆，之後開波時間會佔住你行程。訂閱成功就唔使再人手加比賽。如果一鍵加入失敗，複製網址，喺日曆 App 用網址加入。呢條網址等於你嘅賽程訂閱，亦係第二部裝置嘅還原碼，唔好公開傳出去。",
+    googlePhoneHelp:
+      "電話入面如果見唔到 Sporttime 日曆、或者賽程無持續更新：複製上面網址，用電腦開 Google 日曆 → 設定 → 新增日曆 → 用網址加入。Google 電話 App 好多時加唔到網址訂閱，加成功之後通常幾小時至一日先刷新一次。",
     copyLink: "複製網址",
     copied: "已複製",
     addToGoogle: "加入 Google 日曆",
@@ -291,6 +293,8 @@ export const dictionaries = {
     subscribeTitle: "加入日历",
     calendarHelp:
       "点击加入 Google 或 Apple 日历，之后开赛时间会占住你的行程。订阅成功就不必再人手加比赛。如果一键加入失败，复制网址，在日历 App 用网址加入。这条网址等于你的赛程订阅，也是另一台设备的还原码，不要公开传出去。",
+    googlePhoneHelp:
+      "手机里如果看不到 Sporttime 日历、或者赛程没有持续更新：复制上面的网址，用电脑打开 Google 日历 → 设置 → 添加日历 → 通过网址添加。Google 手机 App 常常加不了网址订阅；加成功之后通常几小时到一天才会刷新一次。",
     copyLink: "复制网址",
     copied: "已复制",
     addToGoogle: "加入 Google 日历",
@@ -472,6 +476,8 @@ export const dictionaries = {
     subscribeTitle: "Add to Calendar",
     calendarHelp:
       "Click add to Google or Apple Calendar. Kickoff times then occupy your week. Once subscribed, you don’t add matches by hand. If one-click fails, copy the URL and add it by URL. This link is your personal feed and the restore key for another device — do not post it publicly.",
+    googlePhoneHelp:
+      "If Sporttime does not appear as its own calendar on your phone, or fixtures stop updating: copy the URL and add it on desktop Google Calendar via Settings → Add calendar → From URL. The Google Calendar app often cannot subscribe by URL. After it is added, Google usually refreshes every few hours, not instantly.",
     copyLink: "Copy URL",
     copied: "Copied",
     addToGoogle: "Add to Google Calendar",

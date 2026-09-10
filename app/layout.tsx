@@ -18,6 +18,7 @@ export const viewport: Viewport = {
   themeColor: "#f3f6f4",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -45,6 +46,11 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description: t.heroBody,
     },
+    appleWebApp: {
+      capable: true,
+      title: t.brand,
+      statusBarStyle: "default",
+    },
   };
 }
 
@@ -52,7 +58,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { locale } = await getDictionary();
   return (
     <html lang={locale} className={`${sans.variable} ${serif.variable}`}>
-      <body className="antialiased pb-16 md:pb-0">{children}</body>
+      <body className="antialiased pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0">{children}</body>
     </html>
   );
 }
