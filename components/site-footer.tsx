@@ -40,6 +40,12 @@ export function SiteFooter({
             </div>
           ) : null}
           <p className="max-w-2xl text-sm leading-relaxed text-[var(--muted)]">{t.footer}</p>
+          <div className="max-w-2xl space-y-1 text-xs leading-relaxed text-[var(--muted)]">
+            <p suppressHydrationWarning>© {new Date().getFullYear()} SportTime. All rights reserved.</p>
+            <p>
+              SportTime 業務由 Day Dream Production HK Limited 營運及持有（香港商業登記號碼：81197323）。
+            </p>
+          </div>
           <p className="flex flex-wrap gap-4 text-sm">
             <Link href="/privacy" className="text-[var(--accent)] underline-offset-4 hover:underline">
               {t.privacy}
@@ -47,6 +53,22 @@ export function SiteFooter({
             <Link href="/terms" className="text-[var(--accent)] underline-offset-4 hover:underline">
               {t.terms}
             </Link>
+            <a
+              href="https://daydreamprohk.ai/legal/terms"
+              className="text-[var(--accent)] underline-offset-4 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              服務條款
+            </a>
+            <a
+              href="https://daydreamprohk.ai/legal/privacy"
+              className="text-[var(--accent)] underline-offset-4 hover:underline"
+              target="_blank"
+              rel="noreferrer"
+            >
+              私隱政策
+            </a>
             {companyUrl ? (
               <a
                 href={companyUrl}
